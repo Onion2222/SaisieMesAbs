@@ -4,8 +4,9 @@ import sys
 import re
 from datetime import datetime
 from PySide6.QtWidgets import QApplication, QPushButton, QLineEdit, QHBoxLayout, QWidget, QGridLayout, QGroupBox,QRadioButton, QLabel, QLayout, QComboBox, QFormLayout
-from PySide6.QtCore import QLocale
-from PySide6.QtGui import Qt, QIntValidator, QDoubleValidator, QPixmap, QIcon
+from PySide6.QtGui import Qt, QPixmap, QIcon
+
+import ressources
 
 #~~Variables Globales~~#
 PATH_RE="./"
@@ -48,7 +49,7 @@ class MainWindow(QWidget):
 
         #Titre
         self.setWindowTitle("Enregistrement des mesures magnétiques")
-        self.setWindowIcon(QIcon('./media/icon.png'))
+        self.setWindowIcon(QIcon(':/icon.png'))
 
         #Définition des 4 mesure (déclinaison 1&2, inclinaison 1&2)
         self.mesure=[] #Array comprennat les widget de mesure
@@ -93,8 +94,8 @@ class MainWindow(QWidget):
         #Déinition des logos
         self.logoGroup=QGroupBox("Programme IPEV-EOST n°139")
         self.logoGroup.setMaximumHeight(self.contexte.sizeHint().height())
-        logoEOST=Logo("./media/Logo_EOST.png",self.layoutCon.sizeHint().height())
-        logoIPEV=Logo("./media/Logo_IPEV.png",self.layoutCon.sizeHint().height())
+        logoEOST=Logo(":/Logo_EOST.png",self.layoutCon.sizeHint().height())
+        logoIPEV=Logo(":/Logo_IPEV.png",self.layoutCon.sizeHint().height())
         #Arrangement dans un layout
         self.layoutLogo=QHBoxLayout()
         self.layoutLogo.addWidget(logoEOST)
@@ -347,7 +348,7 @@ class MyLineEdit(QLineEdit):
         self.setFixedWidth(150)
         self.textEdited.connect(lambda:self.edited()) #lorsque due la valeur est editée
         self.editingFinished.connect(lambda:self.changed())
-        self.regexValidatot=re.compile(r'') 
+        self.regexValidator=re.compile(r'') 
         
     def validatepls(self):
         """Emet un son lorsqu'il y a une erreur d'input

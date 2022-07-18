@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icon.png</file>
+        <file>Logo_EOST.png</file>
+        <file>Logo_IPEV.png</file>
+    </qresource>
+</RCC>
