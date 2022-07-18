@@ -32,6 +32,6 @@ __Selon votre path:__
 python3 ./main.py [-nv] [-d jj/mm/aa]
 ```
 * `-nv` désactive le mode verbose
-* `-d` permet dd rentrer une date au format dd/mm/aa
+* `-d` permet d'entrer une date au format dd/mm/aa
 #
 Made in KER72@TAAF 🇹🇫
