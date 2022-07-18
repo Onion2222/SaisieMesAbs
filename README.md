@@ -38,6 +38,7 @@ python3 ./main.py [-nv] [-d jj/mm/aa]
 
 # Modification des ressources
 Si vous souhaitez ajouter des ressources (images, text, etc.), notez leur chemin dans `./ressources/ressources.qrc` et executez `./ressources/updateRessources.sh`
+
 Les fichiers se retrouveront alors dans le module `./ressources.py`
 
 # Generation d'une release
