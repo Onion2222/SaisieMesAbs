@@ -381,7 +381,7 @@ class MyLineEdit(QLineEdit):
     def rewrite(self):
         """A overrider
         """
-        return
+        pass
     
     def changed(self):
         """Executer si la saisie est modifié, verifie si la saisie est valide. Sinon emet un beep
@@ -456,7 +456,7 @@ class SaisieAngle(MyLineEdit):
         try:
             self.setText('%.4f' % ((float( self.text() ))), True) 
             self.update()
-        finally:
+        except ValueError:
             return
     
                
@@ -474,8 +474,8 @@ class SaisieMesure(MyLineEdit):
         try: 
             self.setText('%.1f' % (float( self.text() )), True)
             self.update()
-        finally:
-            pass
+        except ValueError:
+            return
         return
     def isStrange(self):
         """Override de isStrange() du parent, fournit un detecteur de saisie anormale
@@ -596,10 +596,13 @@ class Mesure(QGroupBox):
             heure = SaisieHeure()
             mesure = SaisieMesure()
             #angle = SaisieAngle()
-            if self.typeMes=="inclinaison":
-                angle = SaisieAngle(AutoIncAngle)
+            if i==0:
+                if self.typeMes=="inclinaison":
+                    angle = SaisieAngle(AutoIncAngle)
+                else:
+                    angle = SaisieAngle(AutoDecAngle)
             else:
-                angle = SaisieAngle(AutoDecAngle)
+                angle = SaisieAngle()
             
             numero=QLabel(str(i+1))
             self.ligne.append({"label":numero,"heure":heure,"angle":angle,"mesure":mesure})
