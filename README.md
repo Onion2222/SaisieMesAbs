@@ -1,11 +1,11 @@
 # SaisieMesAbs
-Outil de saisie des mesures du champs magnétique terrestre par la méthode des résidus
+Outil de saisie des mesures du champs magnétique terrestre par la méthode des résidus.
 
 # Prérequis
-```
-python3
-python3-env (optionnel)
-```
+
+* `python3`
+* `python3-env` (seulement dans le cas de l'utilisation d'un environnement virtuel)
+
 
 # Installation
 __Avec environnement virtuel:__
