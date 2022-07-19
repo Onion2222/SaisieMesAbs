@@ -158,18 +158,18 @@ class MainWindow(QWidget):
             de mise à jour
         """
         if self.edit_angle.isChecked() : return #si les angles sont édité manuellement, on quitte la fonction
-        if num==0 and self.mesure[0].ligne[0]['angle'].text() != '': #Si l'utilisateur à entrer une valeur non vide dans la premiere mesure
-            if self.mesure[1].ligne[0]['angle'].isValid(False): self.mesure[1].updateEst(float(self.mesure[0].ligne[0]['angle'].text())) #maj angle est magnetique de la mesure 2
-            if self.mesure[2].ligne[0]['angle'].isValid(False) : self.mesure[2].updateAngle(float(self.mesure[0].ligne[0]['angle'].text()), True) #maj angles de la mesure 3
-            if self.mesure[3].ligne[0]['angle'].isValid(False) : self.mesure[3].updateEst(float(self.mesure[0].ligne[0]['angle'].text())) #maj angle est magnetique de la mesure 4
+        if num==0 and self.mesure[0].ligne[0]['angle'].isValid(False): #Si l'utilisateur à entrer une valeur non vide dans la premiere mesure
+            self.mesure[1].updateEst(float(self.mesure[0].ligne[0]['angle'].text())) #maj angle est magnetique de la mesure 2
+            self.mesure[2].updateAngle(float(self.mesure[0].ligne[0]['angle'].text()), True) #maj angles de la mesure 3
+            self.mesure[3].updateEst(float(self.mesure[0].ligne[0]['angle'].text())) #maj angle est magnetique de la mesure 4
             return
         #maj des angles de la 4e mesure à partir de ceux de la 2e
-        if num==1 and self.mesure[1].ligne[0]['angle'].text() != '':
-            if self.mesure[3].ligne[0]['angle'].isValid(False) : self.mesure[3].updateAngle(float(self.mesure[1].ligne[0]['angle'].text()), True)
+        if num==1 and self.mesure[1].ligne[0]['angle'].isValid(False):
+            self.mesure[3].updateAngle(float(self.mesure[1].ligne[0]['angle'].text()), True)
             return
         #maj de l'angle de l'est magnetique de la 4e mesure à partir de ceux de la 3e
-        if num==2 and self.mesure[2].ligne[0]['angle'].text() != '':
-            if self.mesure[3].ligne[0]['angle'].isValid(False) : self.mesure[3].updateEst(float(self.mesure[2].ligne[0]['angle'].text()))
+        if num==2 and self.mesure[2].ligne[0]['angle'].isValid(False):
+            self.mesure[3].updateEst(float(self.mesure[2].ligne[0]['angle'].text()))
             return
         
     def updateCalibration(self):
