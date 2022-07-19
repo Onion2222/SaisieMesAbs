@@ -20,7 +20,7 @@ IndexStation=0              #A modifier selon station
 AutoIncAngle="123.----"     #A modifier selon station
 AutoDecAngle="233.----"     #A modifier selon station
 AutoCalAngle="247.75--"     #A modifier selon station
-SecondsBetMeasures=45       #A modifier selon UTILISATEUR
+SecEntreMesures=45       #A modifier selon UTILISATEUR
 
 DEBUG=False
 
@@ -120,14 +120,14 @@ class MainWindow(QWidget):
         self.layoutPrincipale.addWidget(self.mesure[2],3,0)
         self.layoutPrincipale.addWidget(self.mesure[3],3,1)
         #Définition du bouton d'édition des angles calculés
-        self.edit_angle = QRadioButton("&Editer les angles calculés")
-        self.edit_angle.toggled.connect(lambda:self.edit_angle_pressed(self.edit_angle)) #Quand cocher, activer la modification
+        self.modif_angle = QRadioButton("&Editer les angles calculés")
+        self.modif_angle.toggled.connect(lambda:self.modif_angle_pressed(self.modif_angle)) #Quand cocher, activer la modification
         #Définition du bouton enregistrer et de son raccourci
         self.BtnEnregistrer = QPushButton("Enregistrer (Ctrl+S)")
         self.BtnEnregistrer.setShortcut("Ctrl+S")
         self.BtnEnregistrer.clicked.connect(lambda:self.enregistrer(DEBUG)) #Quand cliquer, enregistrer et quitter
         #Ajout des deux boutons au layout principale
-        self.layoutPrincipale.addWidget(self.edit_angle)
+        self.layoutPrincipale.addWidget(self.modif_angle)
         self.layoutPrincipale.addWidget(self.BtnEnregistrer)
         #Mise en place du layout principale
         self.setLayout(self.layoutPrincipale)
@@ -139,7 +139,7 @@ class MainWindow(QWidget):
         self.V1.angleVH.setFocus()
         self.V1.angleVH.selectAll()
 
-    def edit_angle_pressed(self,btn):
+    def modif_angle_pressed(self,btn):
         """Fonction triggered quand la case de modification des angles calculés est cochée
 
         Args:
@@ -157,7 +157,7 @@ class MainWindow(QWidget):
             num (int): index du demandeur
             de mise à jour
         """
-        if self.edit_angle.isChecked() : return #si les angles sont édité manuellement, on quitte la fonction
+        if self.modif_angle.isChecked() : return #si les angles sont édité manuellement, on quitte la fonction
         if num==0 and self.mesure[0].ligne[0]['angle'].isValid(False): #Si l'utilisateur à entrer une valeur non vide dans la premiere mesure
             self.mesure[1].updateEst(float(self.mesure[0].ligne[0]['angle'].text())) #maj angle est magnetique de la mesure 2
             self.mesure[2].updateAngle(float(self.mesure[0].ligne[0]['angle'].text()), True) #maj angles de la mesure 3
@@ -540,34 +540,34 @@ class CalibrationAzimuth(QGroupBox):
 
 class Mesure(QGroupBox):
     
-    def __init__(self, titre, nomMesure, typeMes):
+    def __init__(self, titre, nomMesure, typeMesure):
         """Widget des mesure d'inclinaison et de declinaison
 
         Args:
             titre (str): Nom de la mesure
             nomMesure (str): Nom de la mesure pour transfert des datas
-            typeMes (str): inclinaison ou declinaison
+            typeMesure (str): inclinaison ou declinaison
         """
         super(Mesure, self).__init__()
         self.setTitle(titre) #titre
-        self.typeMes=typeMes #recup type mesure
+        self.typeMesure=typeMesure #recup type mesure
         self.nomMesure=nomMesure
         
         #définition du layout
-        self.layoutMes=QGridLayout()
+        self.layoutMesurePr=QGridLayout()
 
         #si mesure d'inclinaison alors permettre la saisie de l'est magnétique
-        if self.typeMes=="inclinaison":
+        if self.typeMesure=="inclinaison":
             self.indAngleEst=QLabel("Est magnétique")
             self.indAngleEst.setAlignment(Qt.AlignCenter)
             self.angleEst=SaisieAngle(AutoDecAngle)
-            self.layoutMes.addWidget(self.indAngleEst, 0, 1)
-            self.layoutMes.addWidget(self.angleEst, 1, 1)
+            self.layoutMesurePr.addWidget(self.indAngleEst, 0, 1)
+            self.layoutMesurePr.addWidget(self.angleEst, 1, 1)
         else: #sinon
             self.indSpace1=QLabel("")
             self.indSpace2=QLabel("") #je "créer" du vide pour la symmétrie esthetique
-            self.layoutMes.addWidget(self.indSpace1, 0, 1)
-            self.layoutMes.addWidget(self.indSpace2, 1, 1)
+            self.layoutMesurePr.addWidget(self.indSpace1, 0, 1)
+            self.layoutMesurePr.addWidget(self.indSpace2, 1, 1)
 
         #definition des indication et des cases de saisie
         self.indHeure=QLabel("HEURE")
@@ -576,9 +576,9 @@ class Mesure(QGroupBox):
         self.indAngle.setAlignment(Qt.AlignCenter)
         self.indMesure=QLabel("MESURE (nT)")
         self.indMesure.setAlignment(Qt.AlignCenter)
-        self.layoutMes.addWidget(self.indHeure,2,1)
-        self.layoutMes.addWidget(self.indAngle,2,2)
-        self.layoutMes.addWidget(self.indMesure,2,3)
+        self.layoutMesurePr.addWidget(self.indHeure,2,1)
+        self.layoutMesurePr.addWidget(self.indAngle,2,2)
+        self.layoutMesurePr.addWidget(self.indMesure,2,3)
 
         #definition de la liste des 4 ligne de mesures
         self.ligne=[]
@@ -589,7 +589,7 @@ class Mesure(QGroupBox):
             mesure = SaisieMesure()
             #angle = SaisieAngle()
             if i==0:
-                if self.typeMes=="inclinaison":
+                if self.typeMesure=="inclinaison":
                     angle = SaisieAngle(AutoIncAngle)
                 else:
                     angle = SaisieAngle(AutoDecAngle)
@@ -598,10 +598,10 @@ class Mesure(QGroupBox):
             
             numero=QLabel(str(i+1))
             self.ligne.append({"label":numero,"heure":heure,"angle":angle,"mesure":mesure})
-            self.layoutMes.addWidget(self.ligne[i]['label'], 3+i, 0)
-            self.layoutMes.addWidget(self.ligne[i]['heure'], 3+i, 1)
-            self.layoutMes.addWidget(self.ligne[i]['angle'], 3+i, 2)
-            self.layoutMes.addWidget(self.ligne[i]['mesure'], 3+i, 3)
+            self.layoutMesurePr.addWidget(self.ligne[i]['label'], 3+i, 0)
+            self.layoutMesurePr.addWidget(self.ligne[i]['heure'], 3+i, 1)
+            self.layoutMesurePr.addWidget(self.ligne[i]['angle'], 3+i, 2)
+            self.layoutMesurePr.addWidget(self.ligne[i]['mesure'], 3+i, 3)
             """
             #cela ne marche pas et je ne sais pas pq
             if i <= 3:
@@ -623,9 +623,9 @@ class Mesure(QGroupBox):
 
         #Mise en place du layout
         self.setFixedWidth(500)
-        self.setLayout(self.layoutMes)
+        self.setLayout(self.layoutMesurePr)
 
-    def stopUpdate(self, state):
+    def stopUpdate(self, etat):
         """Désactive/active l'autocompletion
 
         Args:
@@ -633,9 +633,9 @@ class Mesure(QGroupBox):
         """
         #désactive/active les cases de saisie d'angle des 3 derniere lignes
         for i in range(1,4):
-            self.ligne[i]['angle'].setDisabled(not state) 
+            self.ligne[i]['angle'].setDisabled(not etat) 
         #désactive/active la case de saisie d'est mag
-        if self.typeMes=="inclinaison" : self.angleEst.setDisabled(not state)
+        if self.typeMesure=="inclinaison" : self.angleEst.setDisabled(not etat)
         
     def updateHeure(self, indexLigne):
         """Autocomplete pour la datation de la prochaine ligne de mesure
@@ -645,10 +645,10 @@ class Mesure(QGroupBox):
         """
         if self.ligne[indexLigne]['heure'].isValid(False):
             initHour = self.ligne[indexLigne]['heure'].text()
-            calculedHour=dateAddSeconds(initHour, SecondsBetMeasures)
+            calculedHour=dateAddSeconds(initHour, SecEntreMesures)
             self.ligne[indexLigne+1]['heure'].setText(calculedHour)
     
-    def updateAngle(self,angle, all):
+    def updateAngle(self, angle, all):
         """Autocomplete sur demande
 
         Args:
@@ -656,7 +656,7 @@ class Mesure(QGroupBox):
             all (bool): mise à jour de tous les angles ou juste des 3 derniers
         """
         if all: self.ligne[0]['angle'].setText('%.4f' % angle)
-        if self.typeMes=="declinaison":
+        if self.typeMesure=="declinaison":
             self.ligne[1]['angle'].setText('%.4f' % angle)
             self.ligne[2]['angle'].setText('%.4f' %((angle+200)%400))
             self.ligne[3]['angle'].setText('%.4f' %((angle+200)%400))
@@ -665,7 +665,7 @@ class Mesure(QGroupBox):
             self.ligne[2]['angle'].setText('%.4f' %((400-angle)%400))
             self.ligne[3]['angle'].setText('%.4f' %((400-angle-200)%400))
 
-    def updateEst(self,angle):
+    def updateEst(self, angle):
         """Autocomplet la saisie de l'est magnetique
 
         Args:
@@ -687,7 +687,7 @@ class Mesure(QGroupBox):
             newCollec["angle"]=self.ligne[i]['angle'].text()
             newCollec["mesure"]=self.ligne[i]['mesure'].text()
             collectionData['mesures'].append(newCollec)
-        if self.typeMes=="inclinaison": collectionData["est"]=self.angleEst.text()
+        if self.typeMesure=="inclinaison": collectionData["est"]=self.angleEst.text()
         collectionData['nom']=self.nomMesure
         return collectionData
     
@@ -695,7 +695,7 @@ class Mesure(QGroupBox):
         LineIsValide=True
         for i in range(4):
             LineIsValide= self.ligne[i]['heure'].isValid() & self.ligne[i]['angle'].isValid() & self.ligne[i]['mesure'].isValid()
-        if self.typeMes=='inclinaison':
+        if self.typeMesure=='inclinaison':
             return LineIsValide & self.angleEst.isValid()
         else:
             return LineIsValide
