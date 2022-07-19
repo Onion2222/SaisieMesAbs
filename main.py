@@ -1,10 +1,14 @@
 #!/usr/bin/python3
 
-import sys
 import re
+import sys
 from datetime import datetime
-from PySide6.QtWidgets import QApplication, QPushButton, QLineEdit, QHBoxLayout, QWidget, QGridLayout, QGroupBox,QRadioButton, QLabel, QLayout, QComboBox, QFormLayout
-from PySide6.QtGui import Qt, QPixmap, QIcon
+
+from PySide6.QtGui import QIcon, QPixmap, Qt
+from PySide6.QtWidgets import (QApplication, QComboBox, QFormLayout,
+                               QGridLayout, QGroupBox, QHBoxLayout, QLabel,
+                               QLayout, QLineEdit, QPushButton, QRadioButton,
+                               QWidget)
 
 import ressources
 
@@ -17,6 +21,8 @@ AutoIncAngle="123.----"     #A modifier selon station
 AutoDecAngle="233.----"     #A modifier selon station
 AutoCalAngle="247.75--"     #A modifier selon station
 SecondsBetMeasures=45       #A modifier selon UTILISATEUR
+
+DEBUG=False
 
 heure_re = re.compile(r'^(([01]\d|2[0-3])([0-5]\d)|24:00)([0-5]\d)$')
 angle_re = re.compile(r'^(?:[0-3]*[0-9]{1,2}|400)(?:\.[0-9]{4})$')
@@ -53,13 +59,13 @@ class MainWindow(QWidget):
 
         #Définition des 4 mesure (déclinaison 1&2, inclinaison 1&2)
         self.mesure=[] #Array comprennat les widget de mesure
-        self.mesure.append(Mesure("Premières mesures de déclinaisons","declinaison"))
+        self.mesure.append(Mesure("Premières mesures de déclinaisons","declinaison premiere serie","declinaison"))
         self.mesure[0].ligne[0]['angle'].textChanged.connect(lambda:self.updateAngleOther(0)) #Trigger pour l'autocomplet
-        self.mesure.append(Mesure("Premières mesures d'inclinaisons","inclinaison"))
+        self.mesure.append(Mesure("Premières mesures d'inclinaisons","inclinaison premiere serie","inclinaison"))
         self.mesure[1].ligne[0]['angle'].textChanged.connect(lambda:self.updateAngleOther(1))
-        self.mesure.append(Mesure("Deuxiemes mesures de déclinaisons","declinaison"))
+        self.mesure.append(Mesure("Deuxiemes mesures de déclinaisons","declinaison deuxieme serie","declinaison"))
         self.mesure[2].ligne[0]['angle'].textChanged.connect(lambda:self.updateAngleOther(2))
-        self.mesure.append(Mesure("Deuxiemes mesures d'inclinaisons","inclinaison"))
+        self.mesure.append(Mesure("Deuxiemes mesures d'inclinaisons","inclinaison deuxieme serie","inclinaison"))
         self.mesure[3].ligne[0]['angle'].textChanged.connect(lambda:self.updateAngleOther(3))
 
         #Définition des mesures d'angle des 2 visées de cible
@@ -119,7 +125,7 @@ class MainWindow(QWidget):
         #Définition du bouton enregistrer et de son raccourci
         self.BtnEnregistrer = QPushButton("Enregistrer (Ctrl+S)")
         self.BtnEnregistrer.setShortcut("Ctrl+S")
-        self.BtnEnregistrer.clicked.connect(lambda:self.enregistrer()) #Quand cliquer, enregistrer et quitter
+        self.BtnEnregistrer.clicked.connect(lambda:self.enregistrer(DEBUG)) #Quand cliquer, enregistrer et quitter
         #Ajout des deux boutons au layout principale
         self.layoutPrincipale.addWidget(self.edit_angle)
         self.layoutPrincipale.addWidget(self.BtnEnregistrer)
@@ -153,17 +159,17 @@ class MainWindow(QWidget):
         """
         if self.edit_angle.isChecked() : return #si les angles sont édité manuellement, on quitte la fonction
         if num==0 and self.mesure[0].ligne[0]['angle'].text() != '': #Si l'utilisateur à entrer une valeur non vide dans la premiere mesure
-            if not self.mesure[1].angleOverwritten : self.mesure[1].updateEst(float(self.mesure[0].ligne[0]['angle'].text())) #maj angle est magnetique de la mesure 2
-            if not self.mesure[2].angleOverwritten : self.mesure[2].updateAngle(float(self.mesure[0].ligne[0]['angle'].text()), True) #maj angles de la mesure 3
-            if not self.mesure[3].angleOverwritten : self.mesure[3].updateEst(float(self.mesure[0].ligne[0]['angle'].text())) #maj angle est magnetique de la mesure 4
+            if self.mesure[1].ligne[0]['angle'].isValid(False): self.mesure[1].updateEst(float(self.mesure[0].ligne[0]['angle'].text())) #maj angle est magnetique de la mesure 2
+            if self.mesure[2].ligne[0]['angle'].isValid(False) : self.mesure[2].updateAngle(float(self.mesure[0].ligne[0]['angle'].text()), True) #maj angles de la mesure 3
+            if self.mesure[3].ligne[0]['angle'].isValid(False) : self.mesure[3].updateEst(float(self.mesure[0].ligne[0]['angle'].text())) #maj angle est magnetique de la mesure 4
             return
         #maj des angles de la 4e mesure à partir de ceux de la 2e
         if num==1 and self.mesure[1].ligne[0]['angle'].text() != '':
-            if not self.mesure[3].angleOverwritten : self.mesure[3].updateAngle(float(self.mesure[1].ligne[0]['angle'].text()), True)
+            if self.mesure[3].ligne[0]['angle'].isValid(False) : self.mesure[3].updateAngle(float(self.mesure[1].ligne[0]['angle'].text()), True)
             return
         #maj de l'angle de l'est magnetique de la 4e mesure à partir de ceux de la 3e
         if num==2 and self.mesure[2].ligne[0]['angle'].text() != '':
-            if not self.mesure[3].angleOverwritten : self.mesure[3].updateEst(float(self.mesure[2].ligne[0]['angle'].text()))
+            if self.mesure[3].ligne[0]['angle'].isValid(False) : self.mesure[3].updateEst(float(self.mesure[2].ligne[0]['angle'].text()))
             return
         
     def updateCalibration(self):
@@ -188,20 +194,14 @@ class MainWindow(QWidget):
             print("Contexte:")
             print(self.getContext())
             print("Azimuth Cible")
-            print(self.getAziCible1)
-            print(self.getAziCible2)
-            print("dec 1")
-            print(self.getMesure(self.mesure[0]))
-            print("inc 1")
-            print(self.getMesure(self.mesure[1]))
-            print("dec 2")
-            print(self.getMesure(self.mesure[2]))
-            print("inc 2")
-            print(self.getMesure(self.mesure[3]))
+            print(self.getAziCible(self.V1))
+            print(self.getAziCible(self.V2))
+            for i in range(len(self.mesure)):
+                print(self.getMesure(self.mesure[i]))
             
         if not self.validateAll(): #Valide la saisie avant enregistrement
             QApplication.beep() #si pas valide, beep
-            return #et ne sauvegarde pas
+            if not debug : return #et ne sauvegarde pas
 
         #Ecriture dans fichier
         self.nom_du_fichier=self.generateFilename() #Génération du nom de fichier
@@ -213,21 +213,9 @@ class MainWindow(QWidget):
         f.writelines(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n")
         f.writelines("\n")
         
-        f.writelines("declinaison premiere serie\n")
-        dicData=self.getMesure(self.mesure[0])
-        f.writelines(self.dicDataToString(dicData)+"\n")
-
-        f.writelines("inclinaison premiere serie\n")
-        dicData=self.getMesure(self.mesure[1]) 
-        f.writelines(self.dicDataToString(dicData)+"\n")
-
-        f.writelines("declinaison deuxieme serie\n")
-        dicData=self.getMesure(self.mesure[2]) 
-        f.writelines(self.dicDataToString(dicData)+"\n")
-
-        f.writelines("inclinaison deuxieme serie\n")
-        dicData=self.getMesure(self.mesure[3]) 
-        f.writelines(self.dicDataToString(dicData)+"\n")
+        
+        for i in range(len(self.mesure)):
+            f.writelines(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
         
         self.quitter() #Quitte la fenêtre
 
@@ -247,8 +235,10 @@ class MainWindow(QWidget):
         """
         text=""
         if dicData['est']!='null': text+=("est magnetique : "+dicData['est']+"\n")
+        text+=dicData['nom']+"\n"
         for i in range(4):
             data=dicData['mesures'][i]
+            print(data)
             text+=(data['heure']+"\t"+data['angle']+"\t"+data['mesure']+"\n")
         return text
     
@@ -550,16 +540,18 @@ class CalibrationAzimuth(QGroupBox):
 
 class Mesure(QGroupBox):
     
-    def __init__(self, titre, typeMes):
+    def __init__(self, titre, nomMesure, typeMes):
         """Widget des mesure d'inclinaison et de declinaison
 
         Args:
             titre (str): Nom de la mesure
+            nomMesure (str): Nom de la mesure pour transfert des datas
             typeMes (str): inclinaison ou declinaison
         """
         super(Mesure, self).__init__()
         self.setTitle(titre) #titre
         self.typeMes=typeMes #recup type mesure
+        self.nomMesure=nomMesure
         
         #définition du layout
         self.layoutMes=QGridLayout()
@@ -624,7 +616,7 @@ class Mesure(QGroupBox):
 
         #lors de la modification de la valeur de l'angle de la premiere ligne
         self.ligne[0]['angle'].textEdited.connect(lambda:self.updateAngle(float(self.ligne[0]['angle'].text()), False)) 
-        self.angleOverwritten=False
+        
 
         #autocompletion permise
         self.stopUpdate(False)
@@ -696,6 +688,7 @@ class Mesure(QGroupBox):
             newCollec["mesure"]=self.ligne[i]['mesure'].text()
             collectionData['mesures'].append(newCollec)
         if self.typeMes=="inclinaison": collectionData["est"]=self.angleEst.text()
+        collectionData['nom']=self.nomMesure
         return collectionData
     
     def validate(self):
