@@ -3823,3 +3823,5 @@ __pycache__/qrc_images.cpython-38.pyc
 __pycache__/ressources.cpython-38.pyc
 ressources/__pycache__/images.cpython-38.pyc
 main.spec
+dist/configurations/globalvar.conf
+dist/configurations/configurations/globalvar.conf

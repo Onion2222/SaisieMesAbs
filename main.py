@@ -10,18 +10,12 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QFormLayout,
                                QLayout, QLineEdit, QPushButton, QRadioButton,
                                QWidget)
 
-import ressources
+import ressources #images et sons
+import configparser
+import os
 
-#~~Variables Globales~~#
-PATH_RE="./"
-Stations=["PAF","AMS","CRO","WEL"]
-Azimuth_Repere="52.35840"   #A modifier selon station
-IndexStation=0              #A modifier selon station
-AutoIncAngle="123.----"     #A modifier selon station
-AutoDecAngle="233.----"     #A modifier selon station
-AutoCalAngleHaut="247.75--" #A modifier selon station
-AutoCalAngleBas="47.75--"   #A modifier selon station
-SecEntreMesures=45          #A modifier selon UTILISATEUR
+PATH_CONF=os.path.dirname(__file__)+'/configurations/globalvar.conf'
+
 
 DEBUG=False
 
@@ -52,6 +46,11 @@ class MainWindow(QWidget):
             print("❌ - Pas de date specifié avec \"-d jj/mm/yy\"")
             print("📆 - Date actuelle choisie")
 
+
+
+        self.updateGlobaleVar()
+
+
         super(MainWindow, self).__init__()
 
         #Titre
@@ -60,19 +59,19 @@ class MainWindow(QWidget):
 
         #Définition des 4 mesure (déclinaison 1&2, inclinaison 1&2)
         self.mesure=[] #Array comprennat les widget de mesure
-        self.mesure.append(Mesure("Premières mesures de déclinaisons","declinaison premiere serie","declinaison"))
+        self.mesure.append(Mesure("Premières mesures de déclinaisons","declinaison premiere serie","declinaison",self.AutoAngle,self.SecEntreMesures))
         self.mesure[0].ligne[0]['angle'].textChanged.connect(lambda:self.updateAngleOther(0)) #Trigger pour l'autocomplet
-        self.mesure.append(Mesure("Premières mesures d'inclinaisons","inclinaison premiere serie","inclinaison"))
+        self.mesure.append(Mesure("Premières mesures d'inclinaisons","inclinaison premiere serie","inclinaison",self.AutoAngle,self.SecEntreMesures))
         self.mesure[1].ligne[0]['angle'].textChanged.connect(lambda:self.updateAngleOther(1))
-        self.mesure.append(Mesure("Deuxiemes mesures de déclinaisons","declinaison deuxieme serie","declinaison"))
+        self.mesure.append(Mesure("Deuxiemes mesures de déclinaisons","declinaison deuxieme serie","declinaison",self.AutoAngle,self.SecEntreMesures))
         self.mesure[2].ligne[0]['angle'].textChanged.connect(lambda:self.updateAngleOther(2))
-        self.mesure.append(Mesure("Deuxiemes mesures d'inclinaisons","inclinaison deuxieme serie","inclinaison"))
+        self.mesure.append(Mesure("Deuxiemes mesures d'inclinaisons","inclinaison deuxieme serie","inclinaison",self.AutoAngle,self.SecEntreMesures))
         self.mesure[3].ligne[0]['angle'].textChanged.connect(lambda:self.updateAngleOther(3))
 
         #Définition des mesures d'angle des 2 visées de cible
-        self.V1=CalibrationAzimuth(1)
+        self.V1=CalibrationAzimuth(1,self.AutoCalAngle)
         self.V1.angleVH.textChanged.connect(lambda:self.updateCalibration()) #Trigger pour l'autocomplet
-        self.V2=CalibrationAzimuth(2)
+        self.V2=CalibrationAzimuth(2,self.AutoCalAngle)
 
         #Definition du groupe contextuel -> Date, Station et Azimuth repère
         self.contexte=QGroupBox("Contexte")
@@ -83,17 +82,15 @@ class MainWindow(QWidget):
         #STATION
         self.layoutStation=QFormLayout()
         self.indStation=QLabel("Station")
-        self.listStation=QComboBox()
-        self.listStation.setFixedWidth(150)
-        self.listStation.addItems(Stations)
-        self.listStation.setItemText(IndexStation,Stations[IndexStation])
+        self.Station=QLabel(self.contexteConf['NOM_STATION'].upper())
+        self.Station.setFixedWidth(150)
         #Azimuth repère
         self.indAR=QLabel("Azimuth repère")
         self.angleAR = SaisieAngle()
-        self.angleAR.setText(Azimuth_Repere)
+        self.angleAR.setText(self.contexteConf['AZIMUTH_REPERE'])
         #Arrangement dans un layout
         self.layoutCon=QFormLayout()
-        self.layoutCon.addRow(self.indStation,self.listStation)
+        self.layoutCon.addRow(self.indStation,self.Station)
         self.layoutCon.addRow(self.indDate,self.date)
         self.layoutCon.addRow(self.indAR,self.angleAR)
         self.contexte.setLayout(self.layoutCon)
@@ -139,6 +136,21 @@ class MainWindow(QWidget):
         #Focus la premiere ligne à editer, pour etre plus rapide
         self.V1.angleVH.setFocus()
         self.V1.angleVH.selectAll()
+
+    def updateGlobaleVar(self):
+        config = configparser.ConfigParser()
+        config.read(PATH_CONF)
+        
+        self.contexteConf        =   config['STATION']
+        """
+        self.Path_RE            =   config['STATION']['PATH_RE']
+        self.Azimuth_Repere     =   config['STATION']['AZIMUTH_REPERE']"""
+        
+        self.AutoAngle          =   {'inc':config['AUTOCOMPLETE']['AUTO_INC_ANGLE'],'dec':config['AUTOCOMPLETE']['AUTO_DEC_ANGLE']}
+        self.AutoCalAngle       =   {'haut':config['AUTOCOMPLETE']['AUTO_CAL_ANGLE_HAUT'],'bas':config['AUTOCOMPLETE']['AUTO_CAL_ANGLE_BAS']}
+        self.SecEntreMesures    =   int(config['AUTOCOMPLETE']['SEC_ENTRE_MESURES'])
+        
+        #A FAIRE VALIDER LES MESURES
 
     def modif_angle_pressed(self,btn):
         """Fonction triggered quand la case de modification des angles calculés est cochée
@@ -191,33 +203,39 @@ class MainWindow(QWidget):
         self.setFocus()
         self.update()
         
-        if debug:
-            print("SAVE")
-            print("Contexte:")
-            print(self.getContext())
-            print("Azimuth Cible")
-            print(self.getAziCible(self.V1))
-            print(self.getAziCible(self.V2))
-            for i in range(len(self.mesure)):
-                print(self.getMesure(self.mesure[i]))
             
         if not self.validateAll(): #Valide la saisie avant enregistrement
             QApplication.beep() #si pas valide, beep
             if not debug : return #et ne sauvegarde pas
 
-        #Ecriture dans fichier
-        self.nom_du_fichier=self.generateFilename() #Génération du nom de fichier
-        f = open(PATH_RE+self.nom_du_fichier, 'w') #Création du fichier
-        f.writelines(self.getContext()[0].lower()+" "+self.getContext()[1].replace("/", " ")+" Methode des residus\n")
-        f.writelines("visees balise\n")
-        f.writelines(" "+self.getContext()[2]+"\n")
-        f.writelines(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n")
-        f.writelines(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n")
-        f.writelines("\n")
+        nom_du_fichier=self.generatePath()+self.generateFileName() #Génération du nom de fichier
+        if not debug:
+            #Ecriture dans fichier
+            try:
+                f = open(nom_du_fichier) #Création du fichier
+                f.writelines(self.contexteConf['NOM_STATION'].lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n")
+                f.writelines("visees balise\n")
+                f.writelines(" "+self.contexteConf['AZIMUTH_REPERE']+"\n")
+                f.writelines(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n")
+                f.writelines(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n")
+                f.writelines("\n")
+            except FileNotFoundError:
+                print("❌ - Erreur, le chemin configuré n'existe pas ! ("+nom_du_fichier+")")
+                return
+        else:
+            print("nom fichier: "+nom_du_fichier) #Création du fichier
+            print(self.contexteConf['NOM_STATION'].lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n")
+            print("visees balise\n")
+            print(" "+self.contexteConf['AZIMUTH_REPERE']+"\n")
+            print(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n")
+            print(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n")
+            print("\n")
         
         
         for i in range(len(self.mesure)):
-            f.writelines(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
+            if not debug : f.writelines(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
+            else: print(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
+            
         
         self.quitter() #Quitte la fenêtre
 
@@ -240,7 +258,6 @@ class MainWindow(QWidget):
         text+=dicData['nom']+"\n"
         for i in range(4):
             data=dicData['mesures'][i]
-            print(data)
             text+=(data['heure']+"\t"+data['angle']+"\t"+data['mesure']+"\n")
         return text
     
@@ -255,23 +272,18 @@ class MainWindow(QWidget):
             MesValide=(MesValide & self.mesure[i].validate())
         return MesValide & self.V1.validate() & self.V2.validate()
         
-    def generateFilename(self):
+    def generatePath(self):
         """Génère un nom de fichier grâce aux paramètres contextuels entrés par l'utilisateur
 
         Returns:
             str: nom d'un fichier re de type re%m%d%h%y.$base
         """
+        return self.contexteConf['PATH_RE'].replace('%YY%',self.date.text()[6:8])+"/"
+    
+    def generateFileName(self):
         arrayDate=self.date.text().split("/")
         heure=self.mesure[0].ligne[0]['heure'].text()
-        return "re"+arrayDate[1]+arrayDate[0]+heure[0:2]+arrayDate[2]+"."+self.getContext()[0].lower()
-    
-    def getContext(self):
-        """Donne le contexte (staion, date et azimuth repère) en tupple
-
-        Returns:
-            tuple (str, str, str): (station, date, azimuth repère)
-        """
-        return self.listStation.currentText(), self.date.text(), self.angleAR.text()
+        return "re"+arrayDate[1]+arrayDate[0]+heure[0:2]+arrayDate[2]+"."+self.contexteConf['NOM_STATION'].lower()
     
     def getAziCible(self, vise):
         """recupère les angle de visée 
@@ -477,7 +489,7 @@ class SaisieMesure(MyLineEdit):
 
 class CalibrationAzimuth(QGroupBox):
     
-    def __init__(self, num):
+    def __init__(self, num, autoValue):
         """Layout pour la saisie des angle de visé de la cible
 
         Args:
@@ -493,8 +505,8 @@ class CalibrationAzimuth(QGroupBox):
         self.indVH=QLabel("V"+str(num)+" sonde en haut")
         self.indVB=QLabel("V"+str(num)+" sonde en bas")
         #Définition de la saisie des angles
-        self.angleVH = SaisieAngle(AutoCalAngleHaut)
-        self.angleVB = SaisieAngle(AutoCalAngleBas)
+        self.angleVH = SaisieAngle(autoValue['haut'])
+        self.angleVB = SaisieAngle(autoValue['bas'])
         #Création du layout
         self.layoutCal.addRow(self.indVH,self.angleVH)
         self.layoutCal.addRow(self.indVB,self.angleVB)
@@ -542,7 +554,7 @@ class CalibrationAzimuth(QGroupBox):
 
 class Mesure(QGroupBox):
     
-    def __init__(self, titre, nomMesure, typeMesure):
+    def __init__(self, titre, nomMesure, typeMesure, autoValueAngle, autoValueSec):
         """Widget des mesure d'inclinaison et de declinaison
 
         Args:
@@ -554,6 +566,7 @@ class Mesure(QGroupBox):
         self.setTitle(titre) #titre
         self.typeMesure=typeMesure #recup type mesure
         self.nomMesure=nomMesure
+        self.autoValueSec=autoValueSec
         
         #définition du layout
         self.layoutMesurePr=QGridLayout()
@@ -562,7 +575,7 @@ class Mesure(QGroupBox):
         if self.typeMesure=="inclinaison":
             self.indAngleEst=QLabel("Est magnétique")
             self.indAngleEst.setAlignment(Qt.AlignCenter)
-            self.angleEst=SaisieAngle(AutoDecAngle)
+            self.angleEst=SaisieAngle(autoValueAngle['dec'])
             self.layoutMesurePr.addWidget(self.indAngleEst, 0, 1)
             self.layoutMesurePr.addWidget(self.angleEst, 1, 1)
         else: #sinon
@@ -592,9 +605,9 @@ class Mesure(QGroupBox):
             #angle = SaisieAngle()
             if i==0:
                 if self.typeMesure=="inclinaison":
-                    angle = SaisieAngle(AutoIncAngle)
+                    angle = SaisieAngle(autoValueAngle['inc'])
                 else:
-                    angle = SaisieAngle(AutoDecAngle)
+                    angle = SaisieAngle(autoValueAngle['dec'])
             else:
                 angle = SaisieAngle()
             
@@ -647,7 +660,7 @@ class Mesure(QGroupBox):
         """
         if self.ligne[indexLigne]['heure'].isValid(False):
             initHour = self.ligne[indexLigne]['heure'].text()
-            calculedHour=dateAddSeconds(initHour, SecEntreMesures)
+            calculedHour=dateAddSeconds(initHour, self.autoValueSec)
             self.ligne[indexLigne+1]['heure'].setText(calculedHour)
     
     def updateAngle(self, angle, all):
@@ -733,8 +746,9 @@ def isADate(date):
     Returns:
         Bool: Date valide ou pas
     """
-    
     return date_re.match(date)
+
+
 
 
 if __name__ == '__main__':
