@@ -212,22 +212,24 @@ class MainWindow(QWidget):
             QApplication.beep() #si pas valide, beep
             if not debug : return #et ne sauvegarde pas
 
-        nom_du_fichier=self.generatePath()+self.generateFileName() #Génération du nom de fichier
+        
         if not debug:
             #Ecriture dans fichier
             try:
-                f = open(nom_du_fichier, 'w') #Création du fichier
-                f.writelines(self.contexteConf['NOM_STATION'].lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n")
-                f.writelines("visees balise\n")
-                f.writelines(" "+self.contexteConf['AZIMUTH_REPERE']+"\n")
-                f.writelines(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n")
-                f.writelines(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n")
-                f.writelines("\n")
-                for i in range(len(self.mesure)):
-                    f.writelines(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
+                f = open(self.generatePath()+self.generateFileName(), 'w') #Création du fichier
             except FileNotFoundError:
-                print("❌ - Erreur, le chemin configuré n'existe pas ! ("+nom_du_fichier+")")
-                return
+                print("❌ - Erreur, le chemin configuré n'existe pas ! ("+self.generatePath()+self.generateFileName()+")")
+                print("❌ - Ecriture des données dans le repertoire courant ("+self.generateFileName()+")")
+                f=open(self.generateFileName(),'w')
+            
+            f.writelines(self.contexteConf['NOM_STATION'].lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n")
+            f.writelines("visees balise\n")
+            f.writelines(" "+self.contexteConf['AZIMUTH_REPERE']+"\n")
+            f.writelines(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n")
+            f.writelines(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n")
+            f.writelines("\n")
+            for i in range(len(self.mesure)):
+                f.writelines(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
         else:
             print("nom fichier: "+nom_du_fichier) #Création du fichier
             print(self.contexteConf['NOM_STATION'].lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n")
@@ -238,10 +240,6 @@ class MainWindow(QWidget):
             print("\n")
             for i in range(len(self.mesure)):
                 print(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
-        
-        
-        
-            
         
         self.quitter() #Quitte la fenêtre
 
