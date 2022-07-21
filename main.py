@@ -81,7 +81,8 @@ class MainWindow(QWidget):
         #STATION
         self.layoutStation=QFormLayout()
         self.indStation=QLabel("Station")
-        self.Station=QLabel(self.contexteConf['NOM_STATION'].upper())
+        self.Station=QLineEdit(self.contexteConf['NOM_STATION'].upper())
+        self.Station.setAlignment(Qt.AlignCenter)
         self.Station.setFixedWidth(150)
         #Azimuth repère
         self.indAR=QLabel("Azimuth repère")
@@ -210,6 +211,7 @@ class MainWindow(QWidget):
         if not self.validateAll(): #Valide la saisie avant enregistrement
             QApplication.beep() #si pas valide, beep
             if not debug : return #et ne sauvegarde pas
+            else : print("=!= La mesure n'est pas valide, 'return' overridé par le mode debug =!=")
 
         
         if not debug:
@@ -221,24 +223,24 @@ class MainWindow(QWidget):
                 print("❌ - Ecriture des données dans le repertoire courant ("+self.generateFileName()+")")
                 f=open("./"+self.generateFileName(),'w')
             
-            f.writelines(self.contexteConf['NOM_STATION'].lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n")
+            f.writelines(self.Station.text().lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n")
             f.writelines("visees balise\n")
-            f.writelines(" "+self.contexteConf['AZIMUTH_REPERE']+"\n")
+            f.writelines(" "+self.angleAR.text()+"\n")
             f.writelines(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n")
             f.writelines(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n")
             f.writelines("\n")
             for i in range(len(self.mesure)):
                 f.writelines(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
         else:
-            print("nom fichier: "+nom_du_fichier) #Création du fichier
-            print(self.contexteConf['NOM_STATION'].lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n")
-            print("visees balise\n")
-            print(" "+self.contexteConf['AZIMUTH_REPERE']+"\n")
-            print(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n")
-            print(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n")
+            print("nom fichier: "+self.generatePath()+self.generateFileName()) #Création du fichier
+            print(self.Station.text().lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n", end='')
+            print("visees balise\n", end='')
+            print(" "+self.angleAR.text()+"\n", end='')
+            print(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n", end='')
+            print(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n", end='')
             print("\n")
             for i in range(len(self.mesure)):
-                print(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
+                print(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n", end='')
         
         self.quitter() #Quitte la fenêtre
 
@@ -281,12 +283,12 @@ class MainWindow(QWidget):
         Returns:
             str: nom d'un fichier re de type re%m%d%h%y.$base
         """
-        return self.contexteConf['PATH_RE'].replace('%YY%',self.date.text()[6:8])+"/"
+        return self.contexteConf['PATH_RE'].replace('%$YY',self.date.text()[6:8]).replace('$STATION',self.Station.text().lower())+"/"
     
     def generateFileName(self):
         arrayDate=self.date.text().split("/")
         heure=self.mesure[0].ligne[0]['heure'].text()
-        return "re"+arrayDate[1]+arrayDate[0]+heure[0:2]+arrayDate[2]+"."+self.contexteConf['NOM_STATION'].lower()
+        return "re"+arrayDate[1]+arrayDate[0]+heure[0:2]+arrayDate[2]+"."+self.Station.text().lower()
     
     def getAziCible(self, vise):
         """recupère les angle de visée 
