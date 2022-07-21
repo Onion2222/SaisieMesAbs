@@ -19,8 +19,9 @@ Azimuth_Repere="52.35840"   #A modifier selon station
 IndexStation=0              #A modifier selon station
 AutoIncAngle="123.----"     #A modifier selon station
 AutoDecAngle="233.----"     #A modifier selon station
-AutoCalAngle="247.75--"     #A modifier selon station
-SecEntreMesures=45       #A modifier selon UTILISATEUR
+AutoCalAngleHaut="247.75--" #A modifier selon station
+AutoCalAngleBas="47.75--"   #A modifier selon station
+SecEntreMesures=45          #A modifier selon UTILISATEUR
 
 DEBUG=False
 
@@ -175,7 +176,8 @@ class MainWindow(QWidget):
     def updateCalibration(self):
         """Met à jour les angles de la deuxième visé à partir de la première pour autocomplet
         """
-        if self.V2.updatable : self.V2.angleVH.setText(self.V1.angleVH.text())
+        if self.V2.updatable and self.V1.angleVH.isValid(False) : 
+            self.V2.angleVH.setText(self.V1.angleVH.text())
         return
     
     def enregistrer(self, debug=False):
@@ -434,9 +436,6 @@ class SaisieAngle(MyLineEdit):
         """Permet la saisie intelligente des données préremplie
         """
         if self.selectionLength() == len(self.text()): #si tout le text est selectionné
-            if len(self.text())<8: #si il manque des chiffres saisie
-                self.setCursorPosition(len(self.text())) #curseur à la fin de la saisie
-            elif not self.editedByHand: #si le text n'a pas été édité par l'homme
                 self.setSelection(self.initext.find('-'),len(self.text())) #selection uniquement des "--" initialisé
         return
     
@@ -494,8 +493,8 @@ class CalibrationAzimuth(QGroupBox):
         self.indVH=QLabel("V"+str(num)+" sonde en haut")
         self.indVB=QLabel("V"+str(num)+" sonde en bas")
         #Définition de la saisie des angles
-        self.angleVH = SaisieAngle(AutoCalAngle)
-        self.angleVB = SaisieAngle()
+        self.angleVH = SaisieAngle(AutoCalAngleHaut)
+        self.angleVB = SaisieAngle(AutoCalAngleBas)
         #Création du layout
         self.layoutCal.addRow(self.indVH,self.angleVH)
         self.layoutCal.addRow(self.indVB,self.angleVB)
@@ -514,7 +513,10 @@ class CalibrationAzimuth(QGroupBox):
         Args:
             angle (str): angle de visée sonde en haut
         """
-        if angle!='' and not self.angleVB.editedByHand: self.angleVB.setText('%.4f' % ((float(angle)+200)%400))
+        try: 
+            if angle!='' and not self.angleVB.editedByHand: self.angleVB.setText('%.4f' % ((float(angle)+200)%400))
+        except ValueError:
+            pass
         
     def stopUpdate(self):
         """Désactive l'autocomplétion
