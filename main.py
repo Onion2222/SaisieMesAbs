@@ -219,6 +219,8 @@ class MainWindow(QWidget):
                 f.writelines(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n")
                 f.writelines(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n")
                 f.writelines("\n")
+                for i in range(len(self.mesure)):
+                    f.writelines(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
             except FileNotFoundError:
                 print("❌ - Erreur, le chemin configuré n'existe pas ! ("+nom_du_fichier+")")
                 return
@@ -230,11 +232,11 @@ class MainWindow(QWidget):
             print(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n")
             print(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n")
             print("\n")
+            for i in range(len(self.mesure)):
+                print(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
         
         
-        for i in range(len(self.mesure)):
-            if not debug : f.writelines(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
-            else: print(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
+        
             
         
         self.quitter() #Quitte la fenêtre
