@@ -16,7 +16,6 @@ import os
 
 PATH_CONF=os.path.dirname(__file__)+'/configurations/globalvar.conf'
 
-
 DEBUG=False
 
 heure_re = re.compile(r'^(([01]\d|2[0-3])([0-5]\d)|24:00)([0-5]\d)$')
@@ -220,7 +219,7 @@ class MainWindow(QWidget):
             except FileNotFoundError:
                 print("❌ - Erreur, le chemin configuré n'existe pas ! ("+self.generatePath()+self.generateFileName()+")")
                 print("❌ - Ecriture des données dans le repertoire courant ("+self.generateFileName()+")")
-                f=open(self.generateFileName(),'w')
+                f=open("./"+self.generateFileName(),'w')
             
             f.writelines(self.contexteConf['NOM_STATION'].lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n")
             f.writelines("visees balise\n")
