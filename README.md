@@ -28,10 +28,10 @@ pip install pyside6
 # Execution
 __Selon votre path:__
 ```
-./main.py [-nv] [-d jj/mm/aa]
+./main.py [-nv] [-d jj/mm/aa] [-conf path/to/file.conf]
 ```
 ```
-python3 ./main.py [-nv] [-d jj/mm/aa]
+python3 ./main.py [-nv] [-d jj/mm/aa] [-conf path/to/file.conf]
 ```
 * `-nv` désactive le mode verbose
 * `-d` permet d'entrer une date au format dd/mm/aa

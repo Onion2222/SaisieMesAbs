@@ -14,11 +14,6 @@ import ressources #images et sons
 import configparser
 import os
 
-#Problème avec pyinstaller https://stackoverflow.com/questions/404744/determining-application-path-in-a-python-exe-generated-by-pyinstaller
-if getattr(sys, 'frozen', False): #Si fichier est un executable
-    PATH_CONF = os.path.dirname(sys.executable)+'/configurations/globalvar.conf'
-elif __file__: #Si c'est un script python
-    PATH_CONF=os.path.dirname(__file__)+'/configurations/globalvar.conf'
 
 
 DEBUG=False
@@ -30,30 +25,16 @@ date_re  = re.compile(r'^\d{2}\/\d{2}\/\d{2}$') #Ne prend pas en compte les ann�
 
 class MainWindow(QWidget):
     
-    def __init__(self, arguments):
+    def __init__(self, path_conf, date):
         """initialisation de la fenêtre principale
 
         Args:
             arguments (array): liste des arguments
         """
+        self.initdate=date
+        self.path_conf=path_conf
         
-        #Verifie si l'argument date est entré
-        try:
-            indexDate=arguments.index("-d")+1
-            if indexDate<len(arguments):
-                if isADate( arguments[indexDate] ):
-                    self.initdate=arguments[indexDate]
-                else:
-                    raise ValueError       
-        except ValueError: #Pas de date specifié ou date incorrecte
-            self.initdate=datetime.today().strftime('%d/%m-/%y')
-            print("❌ - Pas de date specifié avec \"-d jj/mm/yy\"")
-            print("📆 - Date actuelle choisie")
-
-
-
         self.updateGlobaleVar()
-
 
         super(MainWindow, self).__init__()
 
@@ -146,7 +127,7 @@ class MainWindow(QWidget):
         """Met à jour les variables du fichier .conf
         """
         config = configparser.ConfigParser()
-        config.read(PATH_CONF)
+        config.read(self.path_conf)
         
         self.contexteConf   =   config['STATION']
         
@@ -764,7 +745,7 @@ def isADate(date):
 
 
 
-if __name__ == '__main__':
+def main():
     """Fonction principale
     """
     try:
@@ -775,7 +756,55 @@ if __name__ == '__main__':
         print("📬 - \033[31marthurperrin.22@gmail.com\033[0m")
         print("🔎 - Ajoutez l'argument -nv pour ignorer ce message")
     
+    PATH_CONF=""
+    #Problème avec pyinstaller https://stackoverflow.com/questions/404744/determining-application-path-in-a-python-exe-generated-by-pyinstaller
+    if getattr(sys, 'frozen', False): #Si fichier est un executable
+        PATH_CONF = os.path.dirname(sys.executable)+'/configurations/globalvar.conf'
+    elif __file__: #Si c'est un script python
+        PATH_CONF=os.path.dirname(__file__)+'/configurations/globalvar.conf'
+    
+    try:
+        tempPath=sys.argv[sys.argv.index("-conf")+1]
+        if os.path.isfile(tempPath):
+            PATH_CONF=tempPath
+        else:
+            print("❌ - \033[31mLe fichier conf spécifié n'existe pas\033[0m")
+    except ValueError:
+        pass
+    except IndexError:
+        print("❌ - \033[31mMauvaise utilisation de l'argument -conf\033[0m")
+    
+    if PATH_CONF=="": #Si aucun fichier de configuration n'a été trouvé
+        print("❌ - \033[31mAucun fichier configuration trouvé !\033[0m")
+        return
+    
+    #Verifie si l'argument date est entré
+    date=""
+    try:
+        indexDate=sys.argv.index("-d")+1
+        if isADate( sys.argv[indexDate] ):
+            dateMes=sys.argv[indexDate]
+        else:
+            raise ValueError       
+    except ValueError: #Pas de date specifié ou date incorrecte
+        print("📆 - Pas de date specifié avec \"-d jj/mm/yy\"")
+    except IndexError:
+        print("❌ - \033[31mMauvaise utilisation de l'argument -d\033[0m")
+    if date=="":
+        dateMes=datetime.today().strftime('%d/%m-/%y')
+        print("📆 - Date actuelle choisie")
+        
+    
+    
     app = QApplication(sys.argv)
-    window = MainWindow(sys.argv)
+    window = MainWindow(PATH_CONF, dateMes)
     window.show()
     app.exec()
+    
+    
+    
+    
+
+
+if __name__ == '__main__':
+    main()

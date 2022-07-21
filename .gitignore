@@ -3825,3 +3825,4 @@ ressources/__pycache__/images.cpython-38.pyc
 main.spec
 dist/configurations/globalvar.conf
 dist/configurations/configurations/globalvar.conf
+configurations/autre.conf
