@@ -216,7 +216,7 @@ class MainWindow(QWidget):
         if not debug:
             #Ecriture dans fichier
             try:
-                f = open(nom_du_fichier) #Création du fichier
+                f = open(nom_du_fichier, 'w') #Création du fichier
                 f.writelines(self.contexteConf['NOM_STATION'].lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n")
                 f.writelines("visees balise\n")
                 f.writelines(" "+self.contexteConf['AZIMUTH_REPERE']+"\n")
