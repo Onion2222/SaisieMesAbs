@@ -42,9 +42,9 @@ Vous pouvez configurer votre station dans le fichier `./configurations/globalvar
 ```
 [STATION]
 #Nom de la station en minuscule
-NOM_STATION     = paf
-#PATH du chemin où enregistrer les mesures, %%YY%% est la date qui sera remplacé par les deux dernieres chiffre de l'année de la mesure  
-PATH_RE         = /home/%(NOM_STATION)s/%(NOM_STATION)s%%YY%%/mes-abs/mes-jour        
+NOM_STATION     = test
+#PATH du chemin où enregistrer les mesures,$YY sera remplacé par les deux dernieres chiffre de l'année de la mesure et $STATION par le nom de la station en minuscule 
+PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour        
 AZIMUTH_REPERE  = 52.35840
 
 [AUTOCOMPLETE]
