@@ -14,7 +14,12 @@ import ressources #images et sons
 import configparser
 import os
 
-PATH_CONF=os.path.dirname(__file__)+'/configurations/globalvar.conf'
+#Problème avec pyinstaller https://stackoverflow.com/questions/404744/determining-application-path-in-a-python-exe-generated-by-pyinstaller
+if getattr(sys, 'frozen', False): #Si fichier est un executable
+    PATH_CONF = os.path.dirname(sys.executable)+'/configurations/globalvar.conf'
+elif __file__: #Si c'est un script python
+    PATH_CONF=os.path.dirname(__file__)+'/configurations/globalvar.conf'
+
 
 DEBUG=False
 
