@@ -138,23 +138,21 @@ class MainWindow(QWidget):
         self.V1.angleVH.selectAll()
 
     def updateGlobaleVar(self):
+        """Met à jour les variables du fichier .conf
+        """
         config = configparser.ConfigParser()
         config.read(PATH_CONF)
         
-        self.contexteConf        =   config['STATION']
-        """
-        self.Path_RE            =   config['STATION']['PATH_RE']
-        self.Azimuth_Repere     =   config['STATION']['AZIMUTH_REPERE']"""
+        self.contexteConf   =   config['STATION']
         
-        self.AutoAngle          =   {'inc':config['AUTOCOMPLETE']['AUTO_INC_ANGLE'],'dec':config['AUTOCOMPLETE']['AUTO_DEC_ANGLE']}
-        self.AutoCalAngle       =   {'haut':config['AUTOCOMPLETE']['AUTO_CAL_ANGLE_HAUT'],'bas':config['AUTOCOMPLETE']['AUTO_CAL_ANGLE_BAS']}
+        self.AutoAngle      =   {'inc':config['AUTOCOMPLETE']['AUTO_INC_ANGLE'],'dec':config['AUTOCOMPLETE']['AUTO_DEC_ANGLE']}
+        self.AutoCalAngle   =   {'haut':config['AUTOCOMPLETE']['AUTO_CAL_ANGLE_HAUT'],'bas':config['AUTOCOMPLETE']['AUTO_CAL_ANGLE_BAS']}
+        
         try: 
             self.SecEntreMesures    =   int(config['AUTOCOMPLETE']['SEC_ENTRE_MESURES'])
         except ValueError:
             print("❌ - Erreur, la variable SEC_ENTRE_MESURES de globalvar.conf n'est pas un nombre")
             self.SecEntreMesures    =   30
-        
-        #A FAIRE VALIDER LES MESURES
 
     def modif_angle_pressed(self,btn):
         """Fonction triggered quand la case de modification des angles calculés est cochée
@@ -442,9 +440,6 @@ class SaisieAngle(MyLineEdit):
         """MyLineEdit pour la saisie d'angle gradiant
         """
         super(SaisieAngle, self).__init__(textInit)
-        """"angleValidator=QDoubleValidator(0,400,4) #de 0 à 400, avec 4 decimale
-        angleValidator.setLocale(QLocale.English) #permet d'avoir un '.' comme séparateur décimale
-        self.setValidator(angleValidator)"""
         self.setMaxLength(len(textInit))
         self.regexValidator=angle_re
         self.selectionChanged.connect(lambda:self.changeSelection())
@@ -499,6 +494,7 @@ class CalibrationAzimuth(QGroupBox):
 
         Args:
             num (int): Numéro de la visée (1 ou 2)
+            autoValue (collection): Valeur d'angle pour l'autocompletion
         """
         super(CalibrationAzimuth, self).__init__()
         #Titre
@@ -566,6 +562,8 @@ class Mesure(QGroupBox):
             titre (str): Nom de la mesure
             nomMesure (str): Nom de la mesure pour transfert des datas
             typeMesure (str): inclinaison ou declinaison
+            autoValueAngle (collection): Valeur d'angle pour l'autocompletion
+            autoValueSec (int): Temps estimé entre deux mesures pour l'autocompletion
         """
         super(Mesure, self).__init__()
         self.setTitle(titre) #titre
@@ -712,6 +710,11 @@ class Mesure(QGroupBox):
         return collectionData
     
     def validate(self):
+        """Valide l'ensemble des cases des lignes de la mesure
+
+        Returns:
+            bool: Mesures valide ou non
+        """
         LineIsValide=True
         for i in range(4):
             LineIsValide= self.ligne[i]['heure'].isValid() & self.ligne[i]['angle'].isValid() & self.ligne[i]['mesure'].isValid()
@@ -757,6 +760,8 @@ def isADate(date):
 
 
 if __name__ == '__main__':
+    """Fonction principale
+    """
     try:
         sys.argv.index("-nv")
     except ValueError:
