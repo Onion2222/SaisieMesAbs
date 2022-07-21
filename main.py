@@ -20,7 +20,7 @@ PATH_CONF=os.path.dirname(__file__)+'/configurations/globalvar.conf'
 DEBUG=False
 
 heure_re = re.compile(r'^(([01]\d|2[0-3])([0-5]\d)|24:00)([0-5]\d)$')
-angle_re = re.compile(r'^(?:[0-3]*[0-9]{1,2}|400)(?:\.[0-9]{4})$')
+angle_re = re.compile(r'^(?:[0-3]*[0-9]{1,2}|400)(?:\.[0-9]{4,})$')
 mesure_re= re.compile(r'^(?:-*[0-9]+)(?:\.[0-9]{1})$')
 date_re  = re.compile(r'^\d{2}\/\d{2}\/\d{2}$') #Ne prend pas en compte les années bi, le nombre de jours du mois et les nombre de mois.
 
@@ -148,7 +148,11 @@ class MainWindow(QWidget):
         
         self.AutoAngle          =   {'inc':config['AUTOCOMPLETE']['AUTO_INC_ANGLE'],'dec':config['AUTOCOMPLETE']['AUTO_DEC_ANGLE']}
         self.AutoCalAngle       =   {'haut':config['AUTOCOMPLETE']['AUTO_CAL_ANGLE_HAUT'],'bas':config['AUTOCOMPLETE']['AUTO_CAL_ANGLE_BAS']}
-        self.SecEntreMesures    =   int(config['AUTOCOMPLETE']['SEC_ENTRE_MESURES'])
+        try: 
+            self.SecEntreMesures    =   int(config['AUTOCOMPLETE']['SEC_ENTRE_MESURES'])
+        except ValueError:
+            print("❌ - Erreur, la variable SEC_ENTRE_MESURES de globalvar.conf n'est pas un nombre")
+            self.SecEntreMesures    =   30
         
         #A FAIRE VALIDER LES MESURES
 
@@ -269,7 +273,7 @@ class MainWindow(QWidget):
         Returns:
             bool: True si ensemble données valide, False sinon
         """
-        MesValide=True
+        MesValide=self.angleAR.isValid()
         for i in range(4):
             MesValide=(MesValide & self.mesure[i].validate())
         return MesValide & self.V1.validate() & self.V2.validate()
@@ -442,7 +446,7 @@ class SaisieAngle(MyLineEdit):
         """"angleValidator=QDoubleValidator(0,400,4) #de 0 à 400, avec 4 decimale
         angleValidator.setLocale(QLocale.English) #permet d'avoir un '.' comme séparateur décimale
         self.setValidator(angleValidator)"""
-        self.setMaxLength(8)
+        self.setMaxLength(len(textInit))
         self.regexValidator=angle_re
         self.selectionChanged.connect(lambda:self.changeSelection())
         
