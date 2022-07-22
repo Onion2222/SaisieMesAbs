@@ -1,5 +1,7 @@
 # SaisieMesAbs
 Outil de saisie des mesures du champs magnétique terrestre par la méthode des résidus.
+![Alt text](./Screen.png?raw=true "Captrue d'écran de l'application")
+**⚠ Ce script est approuvé ni par l'IPEV, ni par l'EOST, leur logo sont utilisé pour exemple.**
 
 # Prérequis
 Pour Linux:
@@ -64,11 +66,13 @@ Les fichiers se retrouveront alors dans le module `./ressources.py`
 __Pour Linux:__
 
 Prérequis:
-* `pyinstaller`
+* `pip install pyinstaller`
 
 Depuis la racine du projet, executez `./create_release.sh`
 
 Vous trouverez l'executable standalone dans `./dist/SaisieMesAbs`
+
+**⚠ L'executable généré n'est pas portable**
 
 ---
 Made in KER72@TAAF 🇹🇫
