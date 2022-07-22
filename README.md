@@ -3,7 +3,7 @@ Outil de saisie des mesures du champs magnétique terrestre par la méthode des 
 
 ![Alt text](./Screen.png?raw=true "Captrue d'écran de l'application")
 
-**⚠ Ce script est approuvé ni par l'IPEV, ni par l'EOST, leur logo sont utilisé pour exemple.**
+**⚠ Ce script est approuvé ni par l'IPEV, ni par l'EOST, leur logo sont utilisés pour exemple.**
 
 # Prérequis
 Pour Linux:
