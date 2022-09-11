@@ -1,20 +1,27 @@
 #!/usr/bin/python3
 
+import configparser
+from datetime import datetime
+import os
 import re
 import sys
-from datetime import datetime
 
 from PySide6.QtGui import QIcon, QPixmap, Qt
-from PySide6.QtWidgets import (QApplication, QComboBox, QFormLayout,
-                               QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-                               QLayout, QLineEdit, QPushButton, QRadioButton,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QApplication,
+    QFormLayout,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLayout,
+    QLineEdit,
+    QPushButton,
+    QRadioButton,
+    QWidget,
+)
 
-import ressources #images et sons
-import configparser
-import os
-
-
+import ressources
 
 DEBUG=False
 
