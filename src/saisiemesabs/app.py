@@ -2,6 +2,7 @@
 Appication de saisie de la mesure absolue du champs magnétique
 pour les îles subantarctiques
 """
+# pylint: disable= invalid-name
 
 import importlib.metadata
 import configparser
@@ -36,7 +37,9 @@ log.addHandler(log_stream_handler)
 DEBUG = False
 
 class SaisieMesAbs(QtWidgets.QMainWindow):
-    def __init__(self, path_conf, date):
+    """ Fenêtre principale
+    """
+    def __init__(self, path_conf, date) -> None:
         log.debug("DEBUG: %s",DEBUG)
         super().__init__()
         # Récupération de la date de la mesure
@@ -50,7 +53,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         log.debug("Fin initialisation UI")
         self.show()
 
-    def initUi(self):
+    def initUi(self) -> None:
         """initialisation de la fenêtre principale
         """
         # Titre & Icone
@@ -185,7 +188,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.vise1.angleVH.selectAll()
         self.show()
 
-    def updateGlobaleVar(self):
+    def updateGlobaleVar(self) -> None:
         """Met à jour les variables du fichier .conf"""
         try:
             config = configparser.ConfigParser()
@@ -203,14 +206,14 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 self.secEntreMesures = int(config["AUTOCOMPLETE"]["SEC_ENTRE_MESURES"])
             except ValueError:
                 log.info(
-                    "❌ - Erreur, la variable SEC_ENTRE_MESURES de globalvar.conf n'est pas un nombre"
+                    "❌ - Erreur, la variable SEC_ENTRE_MESURES de "
+                    "globalvar.conf n'est pas un nombre"
                 )
                 self.secEntreMesures = 30
         except ValueError:
             log.critical("❌ - Le fichier de configuration n'est pas valide")
-            return
 
-    def modifAnglePressed(self, btn):
+    def modifAnglePressed(self, btn) -> None:
         """ Fonction triggered quand la case de modification des angles
             calculés est cochée
 
@@ -220,9 +223,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # Stopper l'autocompletion des 4 mesures
         for i in range(4):
             self.mesure[i].stopUpdate(not btn.isChecked())
-        return
 
-    def updateAngleOther(self, numMesure):
+    def updateAngleOther(self, numMesure) -> None:
         """ Ordonne la mise à jour des angles de mesure pour l'autocomplet
 
         Args:
@@ -255,18 +257,18 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # maj de l'angle de l'est magnetique de la mesure 4
         # à partir de ceux de la mesure 3
         if numMesure == 2 and self.mesure[2].ligne[0]["angle"].isValid(False):
-            self.mesure[3].updateEst(float(self.mesure[2].ligne[0]["angle"].text()))
-            return
+            self.mesure[3].updateEst(
+                float(self.mesure[2].ligne[0]["angle"].text())
+            )
 
-    def updateCalibration(self):
+    def updateCalibration(self) -> None:
         """ Met à jour les angles de la deuxième visé
             à partir de la première pour autocomplet
         """
         if self.vise2.updatable and self.vise1.angleVH.isValid(False):
             self.vise2.angleVH.setText(self.vise1.angleVH.text())
-        return
 
-    def enregistrer(self):
+    def enregistrer(self) -> None:
         """ Enregistre les données dans un fichier re et quitte l'application
         """
         log.debug("Enregistrement... (DEBUG %s)",DEBUG)
@@ -288,7 +290,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
 
         saveMesure = (
             f'{self.station.text().lower()} {self.date.text().replace("/", " ")}'
-             ' Methode des residus\n'
+            ' Methode des residus\n'
             f'visees balise\n'
             f' {self.angleAR.text()}\n'
             f'{self.getAziCible(self.vise1)[0]} {self.getAziCible(self.vise1)[1]}\n'
@@ -297,32 +299,30 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             saveMesure += (
                 f"{self.dicDataToString( self.getMesure(eMesure) )}\n"
             )
-        
         log.debug(saveMesure)
-        
+
         # Enregistrement
-        savePath = self.generatePath()
         saveFilename = self.generateFileName()
+        saveFile = self.generatePath() / saveFilename
         try:
-            with open(savePath + saveFilename, "w", encoding='utf-8') as saveFile:
+            with open(saveFile, "w", encoding='utf-8') as saveFile:
                 saveFile.write(saveMesure)
         except FileNotFoundError:
             log.critical(
-                "❌ - Erreur, le chemin configuré n'existe pas ! (%s/%s)",
-                savePath,
-                saveFilename
+                "❌ - Erreur, le chemin configuré n'existe pas ! (%s)",
+                saveFile
             )
             log.critical(
                 "❌ - Ecriture des données dans le repertoire courant ./%s car %s n'existe pas",
                 saveFilename,
-                savePath
+                saveFile
             )
-            with open("./" + saveFilename, "w", encoding='utf-8') as saveFile:
+            with open(saveFilename, "w", encoding='utf-8') as saveFile:
                 saveFile.write(saveMesure)
         # Quittr la fenêtre
         self.close()
 
-    def dicDataToString(self, dicData):
+    def dicDataToString(self, dicData) -> str:
         """ Convertit un dictionnaire de donnée en string pour l'enregistrement
 
         Args:
@@ -343,7 +343,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             )
         return text
 
-    def validateAll(self):
+    def validateAll(self) -> bool:
         """ Valide l'ensemble des données saisies et autocomplétés
 
         Returns:
@@ -354,21 +354,20 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             mesValide &= eMesure.validate()
         return mesValide & self.vise1.validate() & self.vise2.validate()
 
-    def generatePath(self):
+    def generatePath(self) -> pathlib.Path:
         """ Génère un dossier d'enregistrement correspondant 
         à la mesure
 
         Returns:
-            str: path définit dans le fichier conf
+            pathlib.Path: path définit dans le fichier conf
         """
-        return (
+        return pathlib.Path(
             self.contexteConf["PATH_RE"]
             .replace("%$YY", self.date.text()[6:8])
             .replace("$STATION", self.station.text().lower())
-            + "/"
         )
 
-    def generateFileName(self):
+    def generateFileName(self) -> str:
         """ Génère un nom de fichier correspondant à la mesure
 
         Returns:
@@ -381,7 +380,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             f"{self.station.text().lower()}"
         )
 
-    def getAziCible(self, vise):
+    def getAziCible(self, vise: CalibrationAzimuth) -> tuple:
         """recupère les angle de visée
 
         Args:
@@ -392,25 +391,25 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         """
         return vise.getAzi()
 
-    def getMesure(self, mesure):
+    def getMesure(self, mesure) -> dict:
         """Récupère le dictionnaire de mesure
 
         Args:
             mesure (Mesure): Objet mesure à lire
 
         Returns:
-            dictionnaire: dictionnaire comprennant les différentes données d'une mesure
+            dict: dictionnaire comprennant les différentes données d'une mesure
         """
         return mesure.getData()
 
-def is_a_date(date):
+def is_a_date(date) -> bool:
     """Renvoie True si la date jj/mm/aa est valide
 
     Args:
         date (str): Date a valider au format jj/mm/aa
 
     Returns:
-        Bool: Date valide ou pas
+        bool: Date valide ou pas
     """
     return date_re.match(date)
 
@@ -444,6 +443,18 @@ def get_dataDir(app_name) -> pathlib.Path:
 
 
 def get_conf_file(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
+    """ Obtenir le chemin du fichier de configuration
+        Si l'application n'a pas de fichier de configuration par défaut, en créer un
+        Si un chemin est donné, verifier sa validité
+        Sinon utiliser le chemin par défaut de l'application
+
+    Args:
+        app_name (str): Nom de l'application
+        conf_path (pathlib.Path, optional): Chemin vers le fichier conf. Defaults to None.
+
+    Returns:
+        pathlib.Path: Le chemin du fichier de configuration
+    """
     if not conf_path:
         log.debug("Pas de conf donné")
         conf_path = get_dataDir(app_name) / "configuration.json"
@@ -468,7 +479,12 @@ def get_conf_file(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path
 
 
 
-def create_conf() -> dict:
+def create_conf() -> str:
+    """ Créer un string de configuration
+
+    Returns:
+        str: configuration
+    """
     return (
         "[STATION]"
         "#Nom de la station en minuscule"
@@ -488,6 +504,8 @@ def create_conf() -> dict:
 
 
 def main():
+    """ Main
+    """
 
     # Find the name of the module that was used to start the app
     app_module = sys.modules["__main__"].__package__
@@ -513,15 +531,15 @@ def main():
     parser.add_argument('--debug',
                         action='store_true',
                         help="Mode DEBUG (dev seulement !)")
-    
+
     args = parser.parse_args()
-    
+
     # Debug
     if args.debug:
         global DEBUG
         DEBUG = True
         args.verbosite=1000
-    
+
     # Réglage de la verbosité
     if args.verbosite <= 0:
         log.setLevel(logging.CRITICAL)
@@ -529,11 +547,11 @@ def main():
         log.setLevel(logging.INFO)
     elif args.verbosite > 1:
         log.setLevel(logging.DEBUG)
-    
+
     log.debug("Arguments: %s",args)
     log.debug("DEBUG: %s",DEBUG)
-    
-    
+
+
     log.info("🧑 - Programme par \033[35m%s\033[0m",metadata["author"])
     log.info("💙 - Merci de reporter tous bugs à l'adresse suivante:")
     log.info("📬 - \033[31mmailto:%s\033[0m",metadata["Author-email"])
