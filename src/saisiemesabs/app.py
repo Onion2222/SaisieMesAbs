@@ -10,7 +10,6 @@ import re
 import logging
 import pathlib
 import argparse
-from datetime import datetime
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QIcon, QPixmap, Qt
