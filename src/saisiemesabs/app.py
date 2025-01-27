@@ -11,9 +11,11 @@ import sys
 import logging
 import pathlib
 import argparse
+import webbrowser
+import subprocess
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QIcon, Qt
+from PySide6.QtGui import QIcon, Qt, QAction
 
 from .resources import ressources_rc
 from .customwidgets import (
@@ -39,14 +41,14 @@ DEBUG = False
 class SaisieMesAbs(QtWidgets.QMainWindow):
     """ Fenêtre principale
     """
-    def __init__(self, path_conf, date) -> None:
-        log.debug("DEBUG: %s",DEBUG)
+    def __init__(self, date, metadata, configuration) -> None:
         super().__init__()
         # Récupération de la date de la mesure
         self.initdate = date
+        # Récupération des metadata
+        self.metadata = metadata
         # Récupération du fichier de configuration #TODO faire dans main !
-        self.pathConf = path_conf
-        self.updateGlobaleVar()
+        self.configuration = configuration
         # Initialisation de l'interface
         log.debug("Debut initialisation UI")
         self.initUi()
@@ -67,8 +69,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 "Premières mesures de déclinaisons",
                 "declinaison premiere serie",
                 "declinaison",
-                self.autoAngle,
-                self.secEntreMesures,
+                self.configuration["Angle"],
+                self.configuration['Delai']["Etape"],
             )
         )
         self.mesure[0].ligne[0]["angle"].textChanged.connect(
@@ -79,8 +81,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 "Premières mesures d'inclinaisons",
                 "inclinaison premiere serie",
                 "inclinaison",
-                self.autoAngle,
-                self.secEntreMesures,
+                self.configuration["Angle"],
+                self.configuration['Delai']["Etape"],
             )
         )
         self.mesure[1].ligne[0]["angle"].textChanged.connect(
@@ -91,8 +93,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 "Deuxiemes mesures de déclinaisons",
                 "declinaison deuxieme serie",
                 "declinaison",
-                self.autoAngle,
-                self.secEntreMesures,
+                self.configuration["Angle"],
+                self.configuration['Delai']["Etape"],
             )
         )
         self.mesure[2].ligne[0]["angle"].textChanged.connect(
@@ -103,19 +105,19 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 "Deuxiemes mesures d'inclinaisons",
                 "inclinaison deuxieme serie",
                 "inclinaison",
-                self.autoAngle,
-                self.secEntreMesures,
+                self.configuration["Angle"],
+                self.configuration['Delai']["Etape"],
             )
         )
         self.mesure[3].ligne[0]["angle"].textChanged.connect(
             lambda: self.updateAngleOther(3)
         )
         # Définition des mesures d'angle des 2 visées de cible
-        self.vise1 = CalibrationAzimuth(1, self.autoCalAngle)
+        self.vise1 = CalibrationAzimuth(1, self.configuration["Calibration"])
         self.vise1.angleVH.textChanged.connect(
             self.updateCalibration
         )  # Trigger pour l'autocomplete
-        self.vise2 = CalibrationAzimuth(2, self.autoCalAngle)
+        self.vise2 = CalibrationAzimuth(2, self.configuration["Calibration"])
         # Definition du groupe contextuel -> Date, Station et Azimuth repère
         self.contexte = QtWidgets.QGroupBox("Contexte")
         # DATE
@@ -125,13 +127,13 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # STATION
         self.layoutStation = QtWidgets.QFormLayout()
         self.indStation = QtWidgets.QLabel("Station")
-        self.station = QtWidgets.QLineEdit(self.contexteConf["NOM_STATION"].upper())
+        self.station = QtWidgets.QLineEdit(self.configuration["Station"].upper())
         self.station.setAlignment(Qt.AlignCenter)
         self.station.setFixedWidth(150)
         # Azimuth repère
         self.indAR = QtWidgets.QLabel("Azimuth repère")
         self.angleAR = SaisieAngle()
-        self.angleAR.setText(self.contexteConf["AZIMUTH_REPERE"])
+        self.angleAR.setText(self.configuration["Azimuth_Rep"])
         # Arrangement dans un layout
         self.layoutCon = QtWidgets.QFormLayout()
         self.layoutCon.addRow(self.indStation, self.station)
@@ -186,32 +188,45 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # Focus la premiere ligne à editer, pour etre plus rapide
         self.vise1.angleVH.setFocus()
         self.vise1.angleVH.selectAll()
+        
+        # Menu barre
+        self.menuBar = QtWidgets.QMenuBar()
+        # - Aide
+        aide = self.menuBar.addMenu('Aide')
+        # - Aide - Documentation
+        self.actionHelp = QAction(self)
+        self.actionHelp.setText("Documentation")
+        self.actionHelp.triggered.connect(self.openHelp)
+        # - Aide - Envoie mail
+        self.actionSos = QAction(self)
+        self.actionSos.setText("Mail aux devs")
+        self.actionSos.triggered.connect(self.sendSOS)
+        # - Aide | Lien
+        aide.addAction(self.actionHelp)
+        aide.addAction(self.actionSos)
+        # - Configuration
+        configuration_menu = self.menuBar.addMenu('Configuration')
+        # - Configuration - Edition
+        self.actionEdit = QAction(self)
+        self.actionEdit.setText("Editer")
+        self.actionEdit.triggered.connect(self.editConf)
+        # - Configuration | Lien
+        configuration_menu.addAction(self.actionEdit)
+        self.setMenuBar(self.menuBar)
+
         self.show()
 
-    def updateGlobaleVar(self) -> None:
-        """Met à jour les variables du fichier .conf"""
-        try:
-            config = configparser.ConfigParser()
-            config.read(self.pathConf)
-            self.contexteConf = config["STATION"]
-            self.autoAngle = {
-                "inc": config["AUTOCOMPLETE"]["AUTO_INC_ANGLE"],
-                "dec": config["AUTOCOMPLETE"]["AUTO_DEC_ANGLE"],
-            }
-            self.autoCalAngle = {
-                "haut": config["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_HAUT"],
-                "bas": config["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_BAS"],
-            }
-            try:
-                self.secEntreMesures = int(config["AUTOCOMPLETE"]["SEC_ENTRE_MESURES"])
-            except ValueError:
-                log.info(
-                    "❌ - Erreur, la variable SEC_ENTRE_MESURES de "
-                    "globalvar.conf n'est pas un nombre"
-                )
-                self.secEntreMesures = 30
-        except ValueError:
-            log.critical("❌ - Le fichier de configuration n'est pas valide")
+    def openHelp(self):
+        log.debug("Documentation")
+        webbrowser.open(self.metadata["Home-page"])
+
+    def sendSOS(self):
+        log.debug("SOS")
+        webbrowser.open(self.metadata["Author-email"])
+
+    def editConf(self):
+        log.debug("editConf")
+        subprocess.Popen(['/usr/bin/xdg-open',self.configuration["Chemin_conf"]])
 
     def modifAnglePressed(self, btn) -> None:
         """ Fonction triggered quand la case de modification des angles
@@ -413,15 +428,34 @@ def is_a_date(date) -> bool:
     """
     return date_re.match(date)
 
+def analyse_conf(chemin_fichier: pathlib.Path) -> dict:
+    try:
+        log.info("Analyse du fichier %s", chemin_fichier)
+        contentConfig = configparser.ConfigParser()
+        contentConfig.read(chemin_fichier)
+        configuration:dict = {}
+        configuration["Chemin_conf"]=chemin_fichier
+        configuration["Station"]=contentConfig["STATION"]["NOM_STATION"]
+        configuration["Azimuth_Rep"]=contentConfig["STATION"]["AZIMUTH_REPERE"]
+        configuration["Chemin_Sauvegarde"]=contentConfig["STATION"]["PATH_RE"]
+        configuration['Angle'] = {
+            "inc": contentConfig["AUTOCOMPLETE"]["AUTO_INC_ANGLE"],
+            "dec": contentConfig["AUTOCOMPLETE"]["AUTO_DEC_ANGLE"]
+        }
+        configuration['Calibration'] = {
+            "haut": contentConfig["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_HAUT"],
+            "bas": contentConfig["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_BAS"]
+        }
+        configuration['Delai']={
+            "Etape" : int(contentConfig["AUTOCOMPLETE"]["SEC_ENTRE_MESURES"]),
+            "Mesure" : int(contentConfig["AUTOCOMPLETE"]["SEC_ENTRE_ETAPES"])
+        }
+        return configuration
+    except ValueError:
+        log.critical("❌ - Le fichier de configuration n'est pas valide")
 
 def get_dataDir(app_name) -> pathlib.Path:
     """
-    Returns a parent directory path
-    where persistent application data can be stored.
-
-    # linux: ~/.local/share
-    # macOS: ~/Library/Application Support
-    # windows: C:/Users/<USER>/AppData/Roaming
     """
 
     home = pathlib.Path.home()
@@ -442,7 +476,7 @@ def get_dataDir(app_name) -> pathlib.Path:
     return myDataDir
 
 
-def get_conf_file(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
+def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
     """ Obtenir le chemin du fichier de configuration
         Si l'application n'a pas de fichier de configuration par défaut, en créer un
         Si un chemin est donné, verifier sa validité
@@ -463,19 +497,24 @@ def get_conf_file(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path
             # Création du fichier conf
             with open(conf_path, "w", encoding='utf-8') as conf_file:
                 conf_file.write(create_conf())
-        return conf_path
+        try:
+            return analyse_conf(conf_path)
+        except (KeyError, ValueError):
+            with open(conf_path, "w", encoding='utf-8') as conf_file:
+                conf_file.write(create_conf())
+            return analyse_conf(conf_path)
 
     # Verifier que le fichier fonctionne
     config_tocheck = configparser.ConfigParser()
-    log.info("Verification du fichier conf donné")
+    log.info("Verification du fichier de configuration")
     try:
         log.debug(conf_path.absolute())
         config_tocheck.read(conf_path.absolute())
-        return conf_path
+        return analyse_conf(conf_path)
 
-    except ValueError:
+    except (ValueError, KeyError):
         log.warning("Le fichier de configuration %s est invalide", conf_path)
-        return get_conf_file(app_name, None)
+        return get_conf(app_name, None)
 
 
 
@@ -486,20 +525,23 @@ def create_conf() -> str:
         str: configuration
     """
     return (
-        "[STATION]"
-        "#Nom de la station en minuscule"
-        "NOM_STATION     = NA"
-        "#PATH du chemin où enregistrer les mesures"
-        "# - $YY sera remplacé par les deux derniers chiffres de l'année de la mesure"
-        "# - $STATION par le nom de la station en minuscule"
-        "PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour"
-        "AZIMUTH_REPERE  = 52.35840"
-        "[AUTOCOMPLETE]"
-        "AUTO_INC_ANGLE      = 123.----"
-        "AUTO_DEC_ANGLE      = 233.----"
-        "AUTO_CAL_ANGLE_HAUT = 247.75--"
-        "AUTO_CAL_ANGLE_BAS  = 47.75--"
-        "SEC_ENTRE_MESURES   = 45"
+        "[STATION]\n\n"
+        "# Nom de la station en minuscule\n"
+        "NOM_STATION     = NA\n\n"
+        "#PATH du chemin où enregistrer les mesures\n"
+        "# - $YY sera remplacé par les deux derniers chiffres de l'année de la mesure\n"
+        "# - $STATION par le nom de la station en minuscule\n"
+        "PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour\n\n"
+        "# Azimuth de la cible\n"
+        "AZIMUTH_REPERE  = 52.35840\n\n"
+        "[AUTOCOMPLETE]\n"
+        "AUTO_INC_ANGLE      = 123.----\n"
+        "AUTO_DEC_ANGLE      = 233.----\n"
+        "AUTO_CAL_ANGLE_HAUT = 247.75--\n"
+        "AUTO_CAL_ANGLE_BAS  = 47.75--\n"
+        "SEC_ENTRE_MESURES   = 45\n"
+        "SEC_ENTRE_ETAPES    = 70\n\n\n"
+        "# N'oubliez pas de relancer l'application !\n"
     )
 
 
@@ -560,10 +602,11 @@ def main():
 
     # Recupération du fichier de configuration
     if args.conf:
-        confFile = get_conf_file(metadata["Formal-Name"], args.conf)
+        conf = get_conf(metadata["Formal-Name"], args.conf)
     else:
-        confFile = get_conf_file(metadata["Formal-Name"],None)
-    log.info("🎛️ - Configuration: %s", confFile)
+        conf = get_conf(metadata["Formal-Name"],None)
+    log.info(conf)
+    log.info("🎛️ - Configuration: %s", conf['Chemin_conf'])
 
     # Verifie si l'argument date est entré
     if not args.date:
@@ -577,6 +620,5 @@ def main():
 
     app = QtWidgets.QApplication(sys.argv)
     log.debug("Démarrage de l'application")
-    log.debug("DEBUG: %s",DEBUG)
-    main_window = SaisieMesAbs(confFile, dateMes)
+    main_window = SaisieMesAbs(dateMes, metadata, conf)
     sys.exit(app.exec())
