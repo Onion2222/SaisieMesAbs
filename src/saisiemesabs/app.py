@@ -1,5 +1,6 @@
 """
-Appication de saisie de la mesure absolue du champs magnétique pour les îles subantarctiques
+Appication de saisie de la mesure absolue du champs magnétique
+pour les îles subantarctiques
 """
 
 import importlib.metadata
@@ -56,7 +57,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.setWindowIcon(QIcon(':/icon.png'))
         # Définition des 4 mesure (déclinaison 1&2, inclinaison 1&2)
         # Array comprennant les 4 widgets de mesure
-        self.mesure = []  
+        self.mesure = []
         self.mesure.append(
             Mesure(
                 "Premières mesures de déclinaisons",
@@ -166,7 +167,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # Quand cliquer, enregistrer et quitter
         self.btnEnregistrer.clicked.connect(
             self.enregistrer
-        ) 
+        )
         # Ajout des deux boutons au layout principale
         self.layoutPrincipale.addWidget(self.modifAngle)
         self.layoutPrincipale.addWidget(self.btnEnregistrer)
@@ -209,19 +210,19 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             return
 
     def modifAnglePressed(self, btn):
-        """Fonction triggered quand la case de modification des angles
-        calculés est cochée
+        """ Fonction triggered quand la case de modification des angles
+            calculés est cochée
 
         Args:
             btn (QtWidgets.QRadioButton): Bouton appuyé
         """
         # Stopper l'autocompletion des 4 mesures
         for i in range(4):
-            self.mesure[i].stopUpdate(btn.isChecked())
+            self.mesure[i].stopUpdate(not btn.isChecked())
         return
 
     def updateAngleOther(self, numMesure):
-        """Ordonne la mise à jour des angles de mesure pour l'autocomplet
+        """ Ordonne la mise à jour des angles de mesure pour l'autocomplet
 
         Args:
             numMesure (int): index du demandeur de mise à jour
@@ -257,28 +258,33 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             return
 
     def updateCalibration(self):
-        """Met à jour les angles de la deuxième visé à partir de la première pour autocomplet"""
+        """ Met à jour les angles de la deuxième visé
+            à partir de la première pour autocomplet
+        """
         if self.vise2.updatable and self.vise1.angleVH.isValid(False):
             self.vise2.angleVH.setText(self.vise1.angleVH.text())
         return
 
     def enregistrer(self):
-        """Enregistre les données dans un fichier re et quitte l'application"""
+        """ Enregistre les données dans un fichier re et quitte l'application
+        """
         log.debug("Enregistrement... (DEBUG %s)",DEBUG)
         # Ces deux lignes permettent de forcer un rewrite()
         # sur les QtWidgets.QLineEdit et ainsi reformater les nombres
         self.setFocus()
         self.update()
-
-        if not self.validateAll():  # Valide la saisie avant enregistrement
-            QtWidgets.QApplication.beep()  # si pas valide, beep
+        # Valide la saisie avant enregistrement
+        if not self.validateAll():
+            # si mesure pas valide, beep
+            QtWidgets.QApplication.beep()
+            # Si pas DEBUG, ne rien faire (la mesure n'est pas valide)
             if not DEBUG:
-                return  # et ne sauvegarde pas
+                return
+            # Si debug, avertir et passer à l'enregistrement
             log.debug(
-                "La mesure n'est pas valide, 'return' overridé par le mode debug"
+                "La mesure n'est pas valide, mais DEBUG=True"
             )
 
-        
         saveMesure = (
             f'{self.station.text().lower()} {self.date.text().replace("/", " ")}'
              ' Methode des residus\n'
@@ -288,36 +294,35 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             f'{self.getAziCible(self.vise2)[0]} {self.getAziCible(self.vise2)[1]}\n')
         for eMesure in self.mesure:
             saveMesure += (
-                f"{self.dicDataToString(self.getMesure(eMesure))}\n"
+                f"{self.dicDataToString( self.getMesure(eMesure) )}\n"
             )
         
         log.debug(saveMesure)
         
+        # Enregistrement
+        savePath = self.generatePath()
+        saveFilename = self.generateFileName()
         try:
-            with open(self.generatePath() + self.generateFileName(), "w", encoding='utf-8') as saveFile:
+            with open(savePath + saveFilename, "w", encoding='utf-8') as saveFile:
                 saveFile.write(saveMesure)
         except FileNotFoundError:
             log.critical(
                 "❌ - Erreur, le chemin configuré n'existe pas ! (%s/%s)",
-                self.generatePath(),
-                self.generateFileName()
+                savePath,
+                saveFilename
             )
             log.critical(
-                "❌ - Ecriture des données dans le repertoire courant %s car %s n'existe pas",
-                "./" + self.generateFileName(),
-                self.generatePath()
+                "❌ - Ecriture des données dans le repertoire courant ./%s car %s n'existe pas",
+                saveFilename,
+                savePath
             )
-            with open("./" + self.generateFileName(), "w", encoding='utf-8') as saveFile:
+            with open("./" + saveFilename, "w", encoding='utf-8') as saveFile:
                 saveFile.write(saveMesure)
-
-        self.quitter()  # Quitte la fenêtre
-
-    def quitter(self):
-        """Quitte l'application"""
+        # Quittr la fenêtre
         self.close()
 
     def dicDataToString(self, dicData):
-        """Convertit un dictionnaire de donnée en string pour l'enregistrement
+        """ Convertit un dictionnaire de donnée en string pour l'enregistrement
 
         Args:
             dicData (dictionnaire): dictionnaire de donnée générer par Mesure
@@ -326,30 +331,34 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             str: string de donnée format re
         """
         text = ""
-        if dicData["est"] != "null":
-            text += "est magnetique : " + dicData["est"] + "\n"
-        text += dicData["nom"] + "\n"
-        for i in range(4):
-            data = dicData["mesures"][i]
-            text += data["heure"] + "\t" + data["angle"] + "\t" + data["mesure"] + "\n"
+        if dicData['est']:
+            text += f"est magnetique : {dicData['est']}\n"
+        text += f"{dicData['nom']}\n"
+        for dicDataMes in dicData['mesures']:
+            text += (
+                f"{dicDataMes['heure']}\t"
+                f"{dicDataMes['angle']}\t"
+                f"{dicDataMes['mesure']}\n"
+            )
         return text
 
     def validateAll(self):
-        """Valide l'ensemble des données saisies et autocomplétés
+        """ Valide l'ensemble des données saisies et autocomplétés
 
         Returns:
             bool: True si ensemble données valide, False sinon
         """
         mesValide = self.angleAR.isValid()
-        for i in range(4):
-            mesValide = mesValide & self.mesure[i].validate()
+        for eMesure in self.mesure:
+            mesValide &= eMesure.validate()
         return mesValide & self.vise1.validate() & self.vise2.validate()
 
     def generatePath(self):
-        """Génère un nom de fichier grâce aux paramètres contextuels entrés par l'utilisateur
+        """ Génère un dossier d'enregistrement correspondant 
+        à la mesure
 
         Returns:
-            str: nom d'un fichier re de type re%m%d%h%y.$base
+            str: path définit dans le fichier conf
         """
         return (
             self.contexteConf["PATH_RE"]
@@ -359,16 +368,16 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         )
 
     def generateFileName(self):
+        """ Génère un nom de fichier correspondant à la mesure
+
+        Returns:
+            str: Nom du fichier: MMDDhhYY.STATION
+        """
         arrayDate = self.date.text().split("/")
         heure = self.mesure[0].ligne[0]["heure"].text()
         return (
-            "re"
-            + arrayDate[1]
-            + arrayDate[0]
-            + heure[0:2]
-            + arrayDate[2]
-            + "."
-            + self.station.text().lower()
+            f"re{arrayDate[1]}{arrayDate[0]}{heure[0:2]}{arrayDate[2]}."
+            f"{self.station.text().lower()}"
         )
 
     def getAziCible(self, vise):
@@ -403,7 +412,7 @@ class Logo(QtWidgets.QLabel):
             path (str): chemin du logo
             maxHeight (int): Hauteur maximale
         """
-        super(Logo, self).__init__()
+        super().__init__()
         self.setFixedHeight(
             maxHeight - 20
         )  # pourquoi ? bah parce que ça marche mieux avec -20
@@ -418,7 +427,7 @@ class SaisieDate(QtWidgets.QLineEdit):
 
     def __init__(self):
         """QtWidgets.QLineEdit pour la saisie d'une date"""
-        super(SaisieDate, self).__init__()
+        super().__init__()
         self.setAlignment(Qt.AlignCenter)
         self.setFixedWidth(150)
         self.setInputMask("99/99/99")
@@ -427,14 +436,14 @@ class SaisieDate(QtWidgets.QLineEdit):
 class MyLineEdit(QtWidgets.QLineEdit):
 
     def __init__(self, text):
-        """QtWidgets.QLineEdit à ma sauce pour l'inscription de l'heure/angle/mesure
+        """ QtWidgets.QLineEdit à ma sauce pour l'inscription de l'heure/angle/mesure
 
         Args:
             text (str): Texte d'indication
         """
         # Variable indiquant si la valeur a été modifiée par l'homme (pour l'autocomplet)
         self.editedByHand = False  
-        super(MyLineEdit, self).__init__()
+        super().__init__()
         self.initext = text
         self.setAlignment(Qt.AlignCenter)
         self.mousePressEvent = self.press  # Action en cas de clique de souris
@@ -519,7 +528,7 @@ class SaisieHeure(MyLineEdit):
 
     def __init__(self, textInit="hhmmss"):
         """MyLineEdit pour saisir une heure"""
-        super(SaisieHeure, self).__init__(textInit)
+        super().__init__(textInit)
         self.setMaxLength(6)
         self.regexValidator = heure_re
 
@@ -528,20 +537,19 @@ class SaisieAngle(MyLineEdit):
 
     def __init__(self, textInit="---.----"):
         """MyLineEdit pour la saisie d'angle gradiant"""
-        super(SaisieAngle, self).__init__(textInit)
+        super().__init__(textInit)
         self.setMaxLength(len(textInit))
         self.regexValidator = angle_re
         self.selectionChanged.connect(self.changeSelection)
 
     def changeSelection(self):
         """Permet la saisie intelligente des données préremplie"""
-        if self.selectionLength() == len(
-            self.text()
-        ):  # si tout le text est selectionné
+        # si tout le text est selectionné
+        if self.selectionLength() == len( self.text() ):
+            # selection uniquement des "--" initialisé
             self.setSelection(
                 self.initext.find("-"), len(self.text())
-            )  # selection uniquement des "--" initialisé
-        return
+            )
 
     def rewrite(self):
         """Permet de reecrire la celule dans le bon format
@@ -550,14 +558,14 @@ class SaisieAngle(MyLineEdit):
             self.setText("%.4f" % ((float(self.text()))), True)
             self.update()
         except ValueError:
-            return
+            pass
 
 
 class SaisieMesure(MyLineEdit):
 
     def __init__(self, textInit="--.-"):
         """MyLineEdit pour la saisir d'une mesure en nT"""
-        super(SaisieMesure, self).__init__(textInit)
+        super().__init__(textInit)
         self.regexValidator = mesure_re
 
     def rewrite(self):
@@ -588,7 +596,7 @@ class CalibrationAzimuth(QtWidgets.QGroupBox):
             numVisee (int): Numéro de la visée (1 ou 2)
             autoValue (collection): Valeur d'angle pour l'autocompletion
         """
-        super(CalibrationAzimuth, self).__init__()
+        super().__init__()
         # Titre
         self.setTitle("Visée d'ouverture " + str(numVisee))
 
@@ -657,31 +665,34 @@ class Mesure(QtWidgets.QGroupBox):
             autoValueAngle (collection): Valeur d'angle pour l'autocompletion
             autoValueSec (int): Temps estimé entre deux mesures pour l'autocompletion
         """
-        super(Mesure, self).__init__()
-        self.setTitle(titre)  # titre
-        self.typeMesure = typeMesure  # recup type mesure
+        super().__init__()
+        # Definition d'un titre
+        self.setTitle(titre)
+        # Définition du type de mesure
+        self.typeMesure = typeMesure
+        # Définition du nom de la mesure (pour la sauvegarde)
         self.nomMesure = nomMesure
+        # Définition du lapse de temps auto entre les mesures
         self.autoValueSec = autoValueSec
 
-        # définition du layout
+        # Définition d'un' layout
         self.layoutMesurePr = QtWidgets.QGridLayout()
 
-        # si mesure d'inclinaison alors permettre la saisie de l'est magnétique
+        # S'il s'agit d'une mesure d'inclinaison alors permettre la saisie de l'est magnétique
         if self.typeMesure == "inclinaison":
             self.indAngleEst = QtWidgets.QLabel("Est magnétique")
             self.indAngleEst.setAlignment(Qt.AlignCenter)
             self.angleEst = SaisieAngle(autoValueAngle["dec"])
             self.layoutMesurePr.addWidget(self.indAngleEst, 0, 1)
             self.layoutMesurePr.addWidget(self.angleEst, 1, 1)
-        else:  # sinon
+        else:
+            # Création de vide pour la symmétrie esthetique
             self.indSpace1 = QtWidgets.QLabel("")
-            self.indSpace2 = QtWidgets.QLabel(
-                ""
-            )  # je "créer" du vide pour la symmétrie esthetique
+            self.indSpace2 = QtWidgets.QLabel("") 
             self.layoutMesurePr.addWidget(self.indSpace1, 0, 1)
             self.layoutMesurePr.addWidget(self.indSpace2, 1, 1)
 
-        # definition des indication et des cases de saisie
+        # Definition des indication et des cases de saisie en haut des colonnes
         self.indHeure = QtWidgets.QLabel("HEURE")
         self.indHeure.setAlignment(Qt.AlignCenter)
         self.indAngle = QtWidgets.QLabel("ANGLE")
@@ -692,15 +703,16 @@ class Mesure(QtWidgets.QGroupBox):
         self.layoutMesurePr.addWidget(self.indAngle, 2, 2)
         self.layoutMesurePr.addWidget(self.indMesure, 2, 3)
 
-        # definition de la liste des 4 ligne de mesures
+        # Definition de la liste des 4 ligne de mesures
         self.ligne = []
-        # création des lignes de mesure
+        # Création des lignes de mesure
         # self.ligne=[{'label':...,'heure':'hhmmss','angle':'--.----','mesure':'-x.x'},...]
         for i in range(4):
             heure = SaisieHeure()
             mesure = SaisieMesure()
-            # angle = SaisieAngle()
+            # S'il s'agit de la premiere mesure d'angle
             if i == 0:
+                # S'il s'agit d'une mesure d'inclinaison
                 if self.typeMesure == "inclinaison":
                     angle = SaisieAngle(autoValueAngle["inc"])
                 else:
@@ -717,40 +729,32 @@ class Mesure(QtWidgets.QGroupBox):
             self.layoutMesurePr.addWidget(self.ligne[i]["angle"], 3 + i, 2)
             self.layoutMesurePr.addWidget(self.ligne[i]["mesure"], 3 + i, 3)
 
-            #cela ne marche pas et je ne sais pas pq
-            #if i <= 3:
-            #    log.info(i)
-            #    self.ligne[i]['heure'].editingFinished.connect(lambda:self.updateHeure(i))
-
-
         self.ligne[0]["heure"].editingFinished.connect(lambda: self.updateHeure(0))
         self.ligne[1]["heure"].editingFinished.connect(lambda: self.updateHeure(1))
         self.ligne[2]["heure"].editingFinished.connect(lambda: self.updateHeure(2))
-
         # lors de la modification de la valeur de l'angle de la premiere ligne
         self.ligne[0]["angle"].textEdited.connect(
             lambda: self.updateAngle(float(self.ligne[0]["angle"].text()), False)
         )
-
         # autocompletion permise
-        self.stopUpdate(False)
+        self.stopUpdate(True)
 
         # Mise en place du layout
         self.setFixedWidth(500)
         self.setLayout(self.layoutMesurePr)
 
-    def stopUpdate(self, etat):
+    def stopUpdate(self, disable):
         """Désactive/active l'autocompletion
 
         Args:
-            state (bool): True pour desactiver l'autocompletion
+            disable (bool): True pour desactiver l'autocompletion
         """
         # désactive/active les cases de saisie d'angle des 3 derniere lignes
         for i in range(1, 4):
-            self.ligne[i]["angle"].setDisabled(not etat)
+            self.ligne[i]["angle"].setDisabled(disable)
         # désactive/active la case de saisie d'est mag
         if self.typeMesure == "inclinaison":
-            self.angleEst.setDisabled(not etat)
+            self.angleEst.setDisabled(disable)
 
     def updateHeure(self, indexLigne):
         """Autocomplete pour la datation de la prochaine ligne de mesure
@@ -758,19 +762,23 @@ class Mesure(QtWidgets.QGroupBox):
         Args:
             indexLigne (int): index de la ligne où l'heure a été saisie
         """
+        # Si l'heure entré est valide
         if self.ligne[indexLigne]["heure"].isValid(False):
+            # Récupération de l'heure entrée
             initHour = self.ligne[indexLigne]["heure"].text()
+            # Calcul de l'heure de la prochaine mesure
             calculedHour = date_add_seconds(initHour, self.autoValueSec)
+            # Affichage de l'heure de la prochaine mesure
             self.ligne[indexLigne + 1]["heure"].setText(calculedHour)
 
-    def updateAngle(self, angle, modeAll):
-        """Autocomplete sur demande
+    def updateAngle(self, angle, includeFirst):
+        """ Autocomplete sur demande des angles
 
         Args:
             angle (str): angle fournit
-            all (bool): mise à jour de tous les angles ou juste des 3 derniers
+            includeFirst (bool): mise à jour de tous les angles ou juste des 3 derniers
         """
-        if modeAll:
+        if includeFirst:
             self.ligne[0]["angle"].setText("%.4f" % angle)
         if self.typeMesure == "declinaison":
             self.ligne[1]["angle"].setText("%.4f" % angle)
@@ -782,7 +790,7 @@ class Mesure(QtWidgets.QGroupBox):
             self.ligne[3]["angle"].setText("%.4f" % ((400 - angle - 200) % 400))
 
     def updateEst(self, angle):
-        """Autocomplet la saisie de l'est magnetique
+        """ Autocomplet la saisie de l'est magnetique
 
         Args:
             angle (str): angle fournit
@@ -790,18 +798,29 @@ class Mesure(QtWidgets.QGroupBox):
         self.angleEst.setText("%.4f" % angle)
 
     def getData(self):
-        """fournit TOUTES les données
+        """ Renvoi les mesures sous forme d'un dictionnaire
 
         Returns:
-            dictionnaire: Toutes les données sous forme d'un dico
+            dictionnaire: mesure au format:
+            {
+                "nom": nom de la mesure
+                "est": angle (ou None),
+                "mesure": {
+                    [{
+                        "heure": hh mm ss,
+                        "angle": angle,
+                        "mesure": mesure
+                    },...]
+                }
+            }
         """
-        collectionData = {"est": "null", "mesures": []}
-        for i in range(0, 4):
+        collectionData = {"est": None, "mesures": []}
+        for eLigne in self.ligne:
             newCollec = {}
-            heure = self.ligne[i]["heure"].text()
-            newCollec["heure"] = heure[0:2] + " " + heure[2:4] + " " + heure[4:6]
-            newCollec["angle"] = self.ligne[i]["angle"].text()
-            newCollec["mesure"] = self.ligne[i]["mesure"].text()
+            heure = eLigne["heure"].text()
+            newCollec["heure"] = f"{heure[0:2]} {heure[2:4]} {heure[4:6]}"
+            newCollec["angle"] = eLigne["angle"].text()
+            newCollec["mesure"] = eLigne["mesure"].text()
             collectionData["mesures"].append(newCollec)
         if self.typeMesure == "inclinaison":
             collectionData["est"] = self.angleEst.text()
@@ -814,17 +833,16 @@ class Mesure(QtWidgets.QGroupBox):
         Returns:
             bool: Mesures valide ou non
         """
-        lineIsValide = True
-        for i in range(4):
-            lineIsValide = (
-                self.ligne[i]["heure"].isValid()
-                & self.ligne[i]["angle"].isValid()
-                & self.ligne[i]["mesure"].isValid()
-            )
+        ligneIsValide = True
+        for eLigne in self.ligne:
+            ligneIsValide = (
+                eLigne["heure"].isValid()
+                & eLigne["angle"].isValid()
+                & eLigne["mesure"].isValid()
+            ) & ligneIsValide
         if self.typeMesure == "inclinaison":
-            return lineIsValide & self.angleEst.isValid()
-        else:
-            return lineIsValide
+            return ligneIsValide & self.angleEst.isValid()
+        return ligneIsValide
 
 
 def date_add_seconds(date, sec):
@@ -873,12 +891,8 @@ def get_dataDir(app_name) -> pathlib.Path:
 
     home = pathlib.Path.home()
 
-    if sys.platform == "win32":
-        dataDir = home / "AppData/Roaming"
-    elif sys.platform == "linux":
+    if sys.platform == "linux":
         dataDir = home / ".local/share"
-    elif sys.platform == "darwin":
-        dataDir = home / "Library/Application Support"
     else:
         log.critical("Plateforme inconnue ! %s", sys.platform)
         raise SystemError
@@ -919,34 +933,22 @@ def get_conf_file(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path
 
 
 def create_conf() -> dict:
-    return """
-[STATION]
-#Nom de la station en minuscule
-NOM_STATION     = NA
-#PATH du chemin où enregistrer les mesures,$YY sera remplacé par les deux derniers chiffres de l'année de la mesure et $STATION par le nom de la station en minuscule 
-PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour        
-AZIMUTH_REPERE  = 52.35840
-[AUTOCOMPLETE]
-AUTO_INC_ANGLE      = 123.----
-AUTO_DEC_ANGLE      = 233.----
-AUTO_CAL_ANGLE_HAUT = 247.75--
-AUTO_CAL_ANGLE_BAS  = 47.75--
-SEC_ENTRE_MESURES   = 45
-"""
-    # return {
-    #    "STATION":{
-    #        "NOM_STATION" : "NA",
-    #        "SAUVEGARDE"  :  "/home/$STATION/$STATION$YY/mes-abs/mes-jour",
-    #        "AZIMUTH_REPERE" : 52.35840
-    #    },
-    #    "AUTOCOMPLETE":{
-    #        "AUTO_INC_ANGLE"      : "123.----",
-    #        "AUTO_DEC_ANGLE"      : "233.----",
-    #        "AUTO_CAL_ANGLE_HAUT" : "247.75--",
-    #        "AUTO_CAL_ANGLE_BAS"  : "47.75--",
-    #        "SEC_ENTRE_MESURES"   : "45"
-    #    }
-    # }
+    return (
+        "[STATION]"
+        "#Nom de la station en minuscule"
+        "NOM_STATION     = NA"
+        "#PATH du chemin où enregistrer les mesures"
+        "# - $YY sera remplacé par les deux derniers chiffres de l'année de la mesure"
+        "# - $STATION par le nom de la station en minuscule"
+        "PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour"
+        "AZIMUTH_REPERE  = 52.35840"
+        "[AUTOCOMPLETE]"
+        "AUTO_INC_ANGLE      = 123.----"
+        "AUTO_DEC_ANGLE      = 233.----"
+        "AUTO_CAL_ANGLE_HAUT = 247.75--"
+        "AUTO_CAL_ANGLE_BAS  = 47.75--"
+        "SEC_ENTRE_MESURES   = 45"
+    )
 
 
 def main():
