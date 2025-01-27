@@ -266,7 +266,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             debug (bool, optional): Active le debug pour visu les données. Defaults to False.
         """
 
-        # Ces deux lignes permettent de forcer un rewrite() sur les QtWidgets.QLineEdit et ainsi reformater les nombres
+        # Ces deux lignes permettent de forcer un rewrite()
+        # sur les QtWidgets.QLineEdit et ainsi reformater les nombres
         self.setFocus()
         self.update()
 
@@ -464,7 +465,8 @@ class MyLineEdit(QtWidgets.QLineEdit):
         Args:
             text (str): Texte d'indication
         """
-        self.editedByHand = False  # Variable indiquant si la valeur a été modifiée par l'homme (pour l'autocomplet)
+        # Variable indiquant si la valeur a été modifiée par l'homme (pour l'autocomplet)
+        self.editedByHand = False  
         super(MyLineEdit, self).__init__()
         self.initext = text
         self.setAlignment(Qt.AlignCenter)
@@ -575,7 +577,8 @@ class SaisieAngle(MyLineEdit):
         return
 
     def rewrite(self):
-        """Permet de reecrire la celule dans le bon format (ex: ajout des 0 manquants pour avoir 4 decimals)"""
+        """Permet de reecrire la celule dans le bon format
+        (ex: ajout des 0 manquants pour avoir 4 decimals)"""
         try:
             self.setText("%.4f" % ((float(self.text()))), True)
             self.update()
@@ -591,7 +594,8 @@ class SaisieMesure(MyLineEdit):
         self.regexValidator = mesure_re
 
     def rewrite(self):
-        """rewrite() permet de reecrire la celule dans le bon format (ex: ajout des 0 manquants pour avoir 1 decimal)"""
+        """rewrite() permet de reecrire la celule dans le bon format
+        (ex: ajout des 0 manquants pour avoir 1 decimal)"""
         try:
             self.setText("%.1f" % (float(self.text())), True)
             self.update()
@@ -934,39 +938,36 @@ def get_conf_file(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path
             with open(conf_path, "w", encoding='utf-8') as conf_file:
                 conf_file.write(create_conf())
         return conf_path
-    
+
     # Verifier que le fichier fonctionne
     config_tocheck = configparser.ConfigParser()
     log.info("Verification du fichier conf donné")
     try:
         log.debug(conf_path.absolute())
         config_tocheck.read(conf_path.absolute())
-
-
         return conf_path
 
     except ValueError:
         log.warning("Le fichier de configuration %s est invalide", conf_path)
         return get_conf_file(app_name, None)
-    
+
 
 
 def create_conf() -> dict:
     return """
-    [STATION]
-    #Nom de la station en minuscule
-    NOM_STATION     = NA
-    #PATH du chemin où enregistrer les mesures,$YY sera remplacé par les deux derniers chiffres de l'année de la mesure et $STATION par le nom de la station en minuscule 
-    PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour        
-    AZIMUTH_REPERE  = 52.35840
-
-    [AUTOCOMPLETE]
-    AUTO_INC_ANGLE      = 123.----
-    AUTO_DEC_ANGLE      = 233.----
-    AUTO_CAL_ANGLE_HAUT = 247.75--
-    AUTO_CAL_ANGLE_BAS  = 47.75--
-    SEC_ENTRE_MESURES   = 45
-    """
+[STATION]
+#Nom de la station en minuscule
+NOM_STATION     = NA
+#PATH du chemin où enregistrer les mesures,$YY sera remplacé par les deux derniers chiffres de l'année de la mesure et $STATION par le nom de la station en minuscule 
+PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour        
+AZIMUTH_REPERE  = 52.35840
+[AUTOCOMPLETE]
+AUTO_INC_ANGLE      = 123.----
+AUTO_DEC_ANGLE      = 233.----
+AUTO_CAL_ANGLE_HAUT = 247.75--
+AUTO_CAL_ANGLE_BAS  = 47.75--
+SEC_ENTRE_MESURES   = 45
+"""
     # return {
     #    "STATION":{
     #        "NOM_STATION" : "NA",
@@ -997,7 +998,7 @@ def main():
     app_module = sys.modules["__main__"].__package__
     # Retrieve the app's metadata
     metadata = importlib.metadata.metadata(app_module)
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--date',
@@ -1030,7 +1031,6 @@ def main():
         log.info("📆 - Date actuelle choisie")
     else:
         dateMes = args.date.strftime("%d/%m-/%y")
-        
 
     QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
 
