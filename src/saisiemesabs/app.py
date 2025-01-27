@@ -191,6 +191,14 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         
         # Menu barre
         self.menuBar = QtWidgets.QMenuBar()
+        # - Configuration
+        configuration_menu = self.menuBar.addMenu('Configuration')
+        # - Configuration - Edition
+        self.actionEdit = QAction(self)
+        self.actionEdit.setText("Editer")
+        self.actionEdit.triggered.connect(self.editConf)
+        # - Configuration | Lien
+        configuration_menu.addAction(self.actionEdit)
         # - Aide
         aide = self.menuBar.addMenu('Aide')
         # - Aide - Documentation
@@ -204,14 +212,6 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # - Aide | Lien
         aide.addAction(self.actionHelp)
         aide.addAction(self.actionSos)
-        # - Configuration
-        configuration_menu = self.menuBar.addMenu('Configuration')
-        # - Configuration - Edition
-        self.actionEdit = QAction(self)
-        self.actionEdit.setText("Editer")
-        self.actionEdit.triggered.connect(self.editConf)
-        # - Configuration | Lien
-        configuration_menu.addAction(self.actionEdit)
         self.setMenuBar(self.menuBar)
 
         self.show()
