@@ -35,6 +35,7 @@ date_re = re.compile(r"^\d{2}\/\d{2}\/\d{2}$")
 
 class SaisieMesAbs(QtWidgets.QMainWindow):
     def __init__(self, path_conf, date):
+        log.debug("DEBUG: %s",DEBUG)
         super().__init__()
         # Récupération de la date de la mesure
         self.initdate = date
@@ -261,7 +262,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
 
     def enregistrer(self):
         """Enregistre les données dans un fichier re et quitte l'application"""
-
+        log.debug("Enregistrement... (DEBUG %s)",DEBUG)
         # Ces deux lignes permettent de forcer un rewrite()
         # sur les QtWidgets.QLineEdit et ainsi reformater les nombres
         self.setFocus()
@@ -288,7 +289,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 f"{self.dicDataToString(self.getMesure(eMesure))}\n"
             )
         
-        log.debug(saveMesure)    
+        log.debug(saveMesure)
         
         try:
             with open(self.generatePath() + self.generateFileName(), "w", encoding='utf-8') as saveFile:
@@ -977,7 +978,8 @@ def main():
     
     # Debug
     if args.debug:
-        DEBUG=True
+        global DEBUG
+        DEBUG = True
         args.verbosite=1000
     
     # Réglage de la verbosité
@@ -987,6 +989,9 @@ def main():
         log.setLevel(logging.INFO)
     elif args.verbosite > 1:
         log.setLevel(logging.DEBUG)
+    
+    log.debug("Arguments: %s",args)
+    log.debug("DEBUG: %s",DEBUG)
     
     
     log.info("🧑 - Programme par \033[35m%s\033[0m",metadata["author"])
@@ -1014,5 +1019,6 @@ def main():
 
     app = QtWidgets.QApplication(sys.argv)
     log.debug("Démarrage de l'application")
+    log.debug("DEBUG: %s",DEBUG)
     main_window = SaisieMesAbs(confFile, dateMes)
     sys.exit(app.exec())
