@@ -165,7 +165,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.btnEnregistrer = QtWidgets.QPushButton("Enregistrer (Ctrl+S)")
         self.btnEnregistrer.setShortcut("Ctrl+S")
         self.btnEnregistrer.clicked.connect(
-            lambda: self.enregistrer(DEBUG)
+            self.enregistrer
         )  # Quand cliquer, enregistrer et quitter
         # Ajout des deux boutons au layout principale
         self.layoutPrincipale.addWidget(self.modifAngle)
@@ -259,7 +259,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             self.vise2.angleVH.setText(self.vise1.angleVH.text())
         return
 
-    def enregistrer(self, debug=False):
+    def enregistrer(self):
         """Enregistre les données dans un fichier re et quitte l'application
 
         Args:
@@ -273,75 +273,44 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
 
         if not self.validateAll():  # Valide la saisie avant enregistrement
             QtWidgets.QApplication.beep()  # si pas valide, beep
-            if not debug:
+            if not DEBUG:
                 return  # et ne sauvegarde pas
-            else:
-                log.info(
-                    "=!= La mesure n'est pas valide, 'return' overridé par le mode debug =!="
-                )
+            log.debug(
+                "La mesure n'est pas valide, 'return' overridé par le mode debug"
+            )
 
-        if not debug:
-            # Ecriture dans fichier
-            try:
-                f = open(
-                    self.generatePath() + self.generateFileName(), "w",encoding='utf-8'
-                )  # Création du fichier
-            except FileNotFoundError:
-                log.info(
-                    "❌ - Erreur, le chemin configuré n'existe pas ! (%s %s)",
-                    self.generatePath(),
-                    self.generateFileName()
-                )
-                log.info(
-                    "❌ - Ecriture des données dans le repertoire courant (%s)"
-                )
-                f = open("./" + self.generateFileName(), "w", encoding='utf-8')
-
-            f.writelines(
-                self.station.text().lower()
-                + " "
-                + self.date.text().replace("/", " ")
-                + " Methode des residus\n"
+        
+        saveMesure = (
+            f"{self.station.text().lower()} {self.date.text().replace("/", " ")}"
+            " Methode des residus\n"
+            f"{"visees balise\n"}"
+            f" {self.angleAR.text()}\n"
+            f"{self.getAziCible(self.vise1)[0]} {self.getAziCible(self.vise1)[1]}\n"
+            f"{self.getAziCible(self.vise2)[0]} {self.getAziCible(self.vise2)[1]}\n"
+        )
+        for eMesure in self.mesure:
+            saveMesure+=(
+                self.dicDataToString(self.getMesure(eMesure)) + "\n"
             )
-            f.writelines("visees balise\n")
-            f.writelines(" " + self.angleAR.text() + "\n")
-            f.writelines(
-                self.getAziCible(self.vise1)[0] + " " + self.getAziCible(self.vise1)[1] + "\n"
+        
+        log.debug(saveMesure)    
+        
+        try:
+            with open(self.generatePath() + self.generateFileName(), "w", encoding='utf-8') as saveFile:
+                saveFile.write(saveMesure)
+        except FileNotFoundError:
+            log.critical(
+                "❌ - Erreur, le chemin configuré n'existe pas ! (%s/%s)",
+                self.generatePath(),
+                self.generateFileName()
             )
-            f.writelines(
-                self.getAziCible(self.vise2)[0] + " " + self.getAziCible(self.vise2)[1] + "\n"
+            log.critical(
+                "❌ - Ecriture des données dans le repertoire courant %s car %s n'existe pas",
+                "./" + self.generateFileName(),
+                self.generatePath()
             )
-            f.writelines("\n")
-            for eMesure in self.mesure:
-                f.writelines(
-                    self.dicDataToString(self.getMesure(eMesure)) + "\n"
-                )
-        else:
-            log.info(
-                "nom fichier: " + self.generatePath() + self.generateFileName()
-            )  # Création du fichier
-            log.info(
-                "%s %s Methode des residus\n",
-                self.station.text().lower(),
-                self.date.text().replace("/", " "),
-            )
-            log.info("visees balise:")
-            log.info(" %s", self.angleAR.text())
-            log.info(
-                "%s %s",
-                self.getAziCible(self.vise1)[0],
-                self.getAziCible(self.vise1)[1]
-            )
-            log.info(
-                "%s %s",
-                self.getAziCible(self.vise2)[0],
-                self.getAziCible(self.vise2)[1]
-            )
-            log.info("\n")
-            for eMesure in self.mesure:
-                log.info(
-                    self.dicDataToString(self.getMesure(eMesure))
-                )
+            with open("./" + self.generateFileName(), "w", encoding='utf-8') as saveFile:
+                saveFile.write(saveMesure)
 
         self.quitter()  # Quitte la fenêtre
 
