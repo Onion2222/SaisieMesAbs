@@ -47,7 +47,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.initdate = date
         # Récupération des metadata
         self.metadata = metadata
-        # Récupération du fichier de configuration #TODO faire dans main !
+        # Récupération du fichier de configuration
         self.configuration = configuration
         # Initialisation de l'interface
         log.debug("Debut initialisation UI")
