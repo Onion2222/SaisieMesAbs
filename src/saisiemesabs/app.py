@@ -1002,10 +1002,7 @@ def main():
     # Configuration
     parser.add_argument("--conf", type=pathlib.Path,
                         help="Utilise un fichier de configuration défini")
-    # Pas de logs
-    parser.add_argument('-nv',
-                        action='store_true',
-                        help="Ignore les logs")
+    # Verbosité
     parser.add_argument('--verbosite',
                         type=int, default=1, required=False,
                         help="Verbosité [0:CRITICAL,1:INFO,2:DEBUG]")
