@@ -1015,9 +1015,11 @@ def main():
     try:
         sys.argv.index("-nv")
     except ValueError:
-        log.info("🧑 - Programme par \033[35mArthur Perrin - KER72\033[0m")
+        log.info("🧑 - Programme par \033[35m%s\033[0m",metadata["author"])
         log.info("💙 - Merci de reporter tous bugs à l'adresse suivante:")
-        log.info("📬 - \033[31marthurperrin.22@gmail.com\033[0m") #TODO check metadata
+        log.info("📬 - \033[31mmailto:%s\033[0m",metadata["Author-email"])
+        log.info("📝 - Ou sur le repo suivant:")
+        log.info("🌍 - \033[31m%s\033[0m",metadata["Home-page"])
 
     if args.conf:
         confFile = get_conf_file(metadata["Formal-Name"], args.conf)
@@ -1031,6 +1033,7 @@ def main():
         log.info("📆 - Date actuelle choisie")
     else:
         dateMes = args.date.strftime("%d/%m-/%y")
+        log.info("📆 - %s choisie", dateMes)
 
     QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
 
