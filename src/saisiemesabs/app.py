@@ -260,11 +260,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         return
 
     def enregistrer(self):
-        """Enregistre les données dans un fichier re et quitte l'application
-
-        Args:
-            debug (bool, optional): Active le debug pour visu les données. Defaults to False.
-        """
+        """Enregistre les données dans un fichier re et quitte l'application"""
 
         # Ces deux lignes permettent de forcer un rewrite()
         # sur les QtWidgets.QLineEdit et ainsi reformater les nombres
@@ -281,16 +277,15 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
 
         
         saveMesure = (
-            f"{self.station.text().lower()} {self.date.text().replace("/", " ")}"
-            " Methode des residus\n"
-            f"{"visees balise\n"}"
-            f" {self.angleAR.text()}\n"
-            f"{self.getAziCible(self.vise1)[0]} {self.getAziCible(self.vise1)[1]}\n"
-            f"{self.getAziCible(self.vise2)[0]} {self.getAziCible(self.vise2)[1]}\n"
-        )
+            f'{self.station.text().lower()} {self.date.text().replace("/", " ")}'
+             ' Methode des residus\n'
+            f'visees balise\n'
+            f' {self.angleAR.text()}\n'
+            f'{self.getAziCible(self.vise1)[0]} {self.getAziCible(self.vise1)[1]}\n'
+            f'{self.getAziCible(self.vise2)[0]} {self.getAziCible(self.vise2)[1]}\n')
         for eMesure in self.mesure:
-            saveMesure+=(
-                self.dicDataToString(self.getMesure(eMesure)) + "\n"
+            saveMesure += (
+                f"{self.dicDataToString(self.getMesure(eMesure))}\n"
             )
         
         log.debug(saveMesure)    
@@ -973,8 +968,17 @@ def main():
     parser.add_argument('-v', "--verbosite",
                         type=int, default=1, required=False,
                         help="Verbosité [0:CRITICAL,1:INFO,2:DEBUG] (defaut: 1)")
+    # Debug
+    parser.add_argument('--debug',
+                        action='store_true',
+                        help="Mode DEBUG (dev seulement !)")
+    
     args = parser.parse_args()
     
+    # Debug
+    if args.debug:
+        DEBUG=True
+        args.verbosite=1000
     
     # Réglage de la verbosité
     if args.verbosite <= 0:
