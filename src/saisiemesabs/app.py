@@ -1,54 +1,55 @@
-#!/usr/bin/python3
+"""
+Appication de saisie de la mesure absolue du champs magnétique pour les îles subantarctiques
+"""
 
+import importlib.metadata
 import configparser
 from datetime import datetime
-import os
-import re
 import sys
+import re
+import logging
+import pathlib
 
+from PySide6 import QtWidgets
 from PySide6.QtGui import QIcon, QPixmap, Qt
-from PySide6.QtWidgets import (
-    QApplication,
-    QFormLayout,
-    QGridLayout,
-    QGroupBox,
-    QHBoxLayout,
-    QLabel,
-    QLayout,
-    QLineEdit,
-    QPushButton,
-    QRadioButton,
-    QWidget,
-)
 
-import ressources
+
+# Définition du logger
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
+log_stream_handler = logging.StreamHandler(sys.stdout)
+log_stream_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)8s] %(lineno)3d : %(message)s'))
+log.addHandler(log_stream_handler)
 
 DEBUG=False
 
 heure_re = re.compile(r'^(([01]\d|2[0-3])([0-5]\d)|24:00)([0-5]\d)$')
 angle_re = re.compile(r'^(?:[0-3]*[0-9]{1,2}|400)(?:\.[0-9]{4,})$')
 mesure_re= re.compile(r'^(?:-*[0-9]+)(?:\.[0-9]{1})$')
-date_re  = re.compile(r'^\d{2}\/\d{2}\/\d{2}$') #Ne prend pas en compte les années bi, le nombre de jours du mois et les nombre de mois.
+date_re  = re.compile(r'^\d{2}\/\d{2}\/\d{2}$')
 
-class MainWindow(QWidget):
-    
+
+class SaisieMesAbs(QtWidgets.QMainWindow):
     def __init__(self, path_conf, date):
+        super().__init__()
+        self.initdate=date
+        self.path_conf=path_conf
+        log.info(self.path_conf)
+        self.updateGlobaleVar()
+        self.init_ui()
+        log.debug("Fin init ui")
+        self.show()
+
+    def init_ui(self):
         """initialisation de la fenêtre principale
 
         Args:
             arguments (array): liste des arguments
         """
-        self.initdate=date
-        self.path_conf=path_conf
-        
-        self.updateGlobaleVar()
-
-        super(MainWindow, self).__init__()
 
         #Titre
         self.setWindowTitle("Enregistrement des mesures magnétiques")
-        self.setWindowIcon(QIcon(':/icon.png'))
-
+        #TODO self.setWindowIcon(QIcon(':/icon.png'))
         #Définition des 4 mesure (déclinaison 1&2, inclinaison 1&2)
         self.mesure=[] #Array comprennat les widget de mesure
         self.mesure.append(Mesure("Premières mesures de déclinaisons","declinaison premiere serie","declinaison",self.AutoAngle,self.SecEntreMesures))
@@ -66,41 +67,41 @@ class MainWindow(QWidget):
         self.V2=CalibrationAzimuth(2,self.AutoCalAngle)
 
         #Definition du groupe contextuel -> Date, Station et Azimuth repère
-        self.contexte=QGroupBox("Contexte")
+        self.contexte=QtWidgets.QGroupBox("Contexte")
         #DATE
-        self.indDate=QLabel("Date")
+        self.indDate=QtWidgets.QLabel("Date")
         self.date = SaisieDate()
         self.date.setText(self.initdate)
         #STATION
-        self.layoutStation=QFormLayout()
-        self.indStation=QLabel("Station")
-        self.Station=QLineEdit(self.contexteConf['NOM_STATION'].upper())
+        self.layoutStation=QtWidgets.QFormLayout()
+        self.indStation=QtWidgets.QLabel("Station")
+        self.Station=QtWidgets.QLineEdit(self.contexteConf['NOM_STATION'].upper())
         self.Station.setAlignment(Qt.AlignCenter)
         self.Station.setFixedWidth(150)
         #Azimuth repère
-        self.indAR=QLabel("Azimuth repère")
+        self.indAR=QtWidgets.QLabel("Azimuth repère")
         self.angleAR = SaisieAngle()
         self.angleAR.setText(self.contexteConf['AZIMUTH_REPERE'])
         #Arrangement dans un layout
-        self.layoutCon=QFormLayout()
+        self.layoutCon=QtWidgets.QFormLayout()
         self.layoutCon.addRow(self.indStation,self.Station)
         self.layoutCon.addRow(self.indDate,self.date)
         self.layoutCon.addRow(self.indAR,self.angleAR)
         self.contexte.setLayout(self.layoutCon)
 
         #Déinition des logos
-        self.logoGroup=QGroupBox("Programme IPEV-EOST n°139")
+        self.logoGroup=QtWidgets.QGroupBox("Programme IPEV-EOST n°139")
         self.logoGroup.setMaximumHeight(self.contexte.sizeHint().height())
-        logoEOST=Logo(":/Logo_EOST.png",self.layoutCon.sizeHint().height())
-        logoIPEV=Logo(":/Logo_IPEV.png",self.layoutCon.sizeHint().height())
+        #TODO logoEOST=Logo(":/Logo_EOST.png",self.layoutCon.sizeHint().height())
+        #TODO logoIPEV=Logo(":/Logo_IPEV.png",self.layoutCon.sizeHint().height())
         #Arrangement dans un layout
-        self.layoutLogo=QHBoxLayout()
-        self.layoutLogo.addWidget(logoEOST)
-        self.layoutLogo.addWidget(logoIPEV)
+        self.layoutLogo=QtWidgets.QHBoxLayout()
+        #TODO self.layoutLogo.addWidget(logoEOST)
+        #TODO self.layoutLogo.addWidget(logoIPEV)
         self.logoGroup.setLayout(self.layoutLogo)
 
         #Création du layout principale
-        self.layoutPrincipale=QGridLayout()
+        self.layoutPrincipale=QtWidgets.QGridLayout()
         #Ajout des widgets
         self.layoutPrincipale.addWidget(self.contexte, 0, 0)
         self.layoutPrincipale.addWidget(self.logoGroup, 0, 1)
@@ -111,10 +112,10 @@ class MainWindow(QWidget):
         self.layoutPrincipale.addWidget(self.mesure[2],3,0)
         self.layoutPrincipale.addWidget(self.mesure[3],3,1)
         #Définition du bouton d'édition des angles calculés
-        self.modif_angle = QRadioButton("&Editer les angles calculés")
+        self.modif_angle = QtWidgets.QRadioButton("&Editer les angles calculés")
         self.modif_angle.toggled.connect(lambda:self.modif_angle_pressed(self.modif_angle)) #Quand cocher, activer la modification
         #Définition du bouton enregistrer et de son raccourci
-        self.BtnEnregistrer = QPushButton("Enregistrer (Ctrl+S)")
+        self.BtnEnregistrer = QtWidgets.QPushButton("Enregistrer (Ctrl+S)")
         self.BtnEnregistrer.setShortcut("Ctrl+S")
         self.BtnEnregistrer.clicked.connect(lambda:self.enregistrer(DEBUG)) #Quand cliquer, enregistrer et quitter
         #Ajout des deux boutons au layout principale
@@ -122,13 +123,18 @@ class MainWindow(QWidget):
         self.layoutPrincipale.addWidget(self.BtnEnregistrer)
         #Mise en place du layout principale
         self.setLayout(self.layoutPrincipale)
+
+        container = QtWidgets.QWidget()
+        container.setLayout(self.layoutPrincipale)
+        self.setCentralWidget(container)
         
         #Autre:
         #Empèche la modification de la taille de la fenêtre à la main
-        self.layout().setSizeConstraint(QLayout.SetFixedSize)
+        #TODO self.layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         #Focus la premiere ligne à editer, pour etre plus rapide
         self.V1.angleVH.setFocus()
         self.V1.angleVH.selectAll()
+        self.show()
 
     def updateGlobaleVar(self):
         """Met à jour les variables du fichier .conf
@@ -144,18 +150,18 @@ class MainWindow(QWidget):
         try: 
             self.SecEntreMesures    =   int(config['AUTOCOMPLETE']['SEC_ENTRE_MESURES'])
         except ValueError:
-            print("❌ - Erreur, la variable SEC_ENTRE_MESURES de globalvar.conf n'est pas un nombre")
+            log.info("❌ - Erreur, la variable SEC_ENTRE_MESURES de globalvar.conf n'est pas un nombre")
             self.SecEntreMesures    =   30
 
     def modif_angle_pressed(self,btn):
         """Fonction triggered quand la case de modification des angles calculés est cochée
 
         Args:
-            btn (QRadioButton): Bouton appuyé
+            btn (QtWidgets.QRadioButton): Bouton appuyé
         """
         #Stopper l'autocompletion des 4 mesures
         for i in range(4):
-            self.mesure[i].stopUpdate(btn.isChecked()) 
+            self.mesure[i].stopUpdate(btn.isChecked())
         return
             
     def updateAngleOther(self, num):
@@ -194,15 +200,15 @@ class MainWindow(QWidget):
             debug (bool, optional): Active le debug pour visu les données. Defaults to False.
         """
         
-        #Ces deux lignes permettent de forcer un rewrite() sur les QLineEdit et ainsi reformater les nombres
+        #Ces deux lignes permettent de forcer un rewrite() sur les QtWidgets.QLineEdit et ainsi reformater les nombres
         self.setFocus()
         self.update()
         
             
         if not self.validateAll(): #Valide la saisie avant enregistrement
-            QApplication.beep() #si pas valide, beep
+            QtWidgets.QApplication.beep() #si pas valide, beep
             if not debug : return #et ne sauvegarde pas
-            else : print("=!= La mesure n'est pas valide, 'return' overridé par le mode debug =!=")
+            else : log.info("=!= La mesure n'est pas valide, 'return' overridé par le mode debug =!=")
 
         
         if not debug:
@@ -210,8 +216,8 @@ class MainWindow(QWidget):
             try:
                 f = open(self.generatePath()+self.generateFileName(), 'w') #Création du fichier
             except FileNotFoundError:
-                print("❌ - Erreur, le chemin configuré n'existe pas ! ("+self.generatePath()+self.generateFileName()+")")
-                print("❌ - Ecriture des données dans le repertoire courant ("+self.generateFileName()+")")
+                log.info("❌ - Erreur, le chemin configuré n'existe pas ! ("+self.generatePath()+self.generateFileName()+")")
+                log.info("❌ - Ecriture des données dans le repertoire courant ("+self.generateFileName()+")")
                 f=open("./"+self.generateFileName(),'w')
             
             f.writelines(self.Station.text().lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n")
@@ -223,15 +229,15 @@ class MainWindow(QWidget):
             for i in range(len(self.mesure)):
                 f.writelines(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n")
         else:
-            print("nom fichier: "+self.generatePath()+self.generateFileName()) #Création du fichier
-            print(self.Station.text().lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n", end='')
-            print("visees balise\n", end='')
-            print(" "+self.angleAR.text()+"\n", end='')
-            print(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n", end='')
-            print(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n", end='')
-            print("\n")
+            log.info("nom fichier: "+self.generatePath()+self.generateFileName()) #Création du fichier
+            log.info(self.Station.text().lower()+" "+self.date.text().replace("/", " ")+" Methode des residus\n", end='')
+            log.info("visees balise\n", end='')
+            log.info(" "+self.angleAR.text()+"\n", end='')
+            log.info(self.getAziCible(self.V1)[0]+" "+self.getAziCible(self.V1)[1]+"\n", end='')
+            log.info(self.getAziCible(self.V2)[0]+" "+self.getAziCible(self.V2)[1]+"\n", end='')
+            log.info("\n")
             for i in range(len(self.mesure)):
-                print(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n", end='')
+                log.info(self.dicDataToString(self.getMesure(self.mesure[i]))+"\n", end='')
         
         self.quitter() #Quitte la fenêtre
 
@@ -304,7 +310,7 @@ class MainWindow(QWidget):
         return mesure.getData()
 
 
-class Logo(QLabel):
+class Logo(QtWidgets.QLabel):
     
     def __init__(self, path, maxHeight):
         """Génération d'un label pour afficher un logo
@@ -320,10 +326,10 @@ class Logo(QLabel):
         self.setMask(logo.mask())
 
 
-class SaisieDate(QLineEdit):
+class SaisieDate(QtWidgets.QLineEdit):
     
     def __init__(self):
-        """QLineEdit pour la saisie d'une date
+        """QtWidgets.QLineEdit pour la saisie d'une date
         """
         super(SaisieDate, self).__init__()
         self.setAlignment(Qt.AlignCenter)
@@ -331,10 +337,10 @@ class SaisieDate(QLineEdit):
         self.setInputMask("99/99/99")
         
 
-class MyLineEdit(QLineEdit):
+class MyLineEdit(QtWidgets.QLineEdit):
     
     def __init__(self, text):
-        """QLineEdit à ma sauce pour l'inscription de l'heure/angle/mesure
+        """QtWidgets.QLineEdit à ma sauce pour l'inscription de l'heure/angle/mesure
 
         Args:
             text (str): Texte d'indication
@@ -353,7 +359,7 @@ class MyLineEdit(QLineEdit):
     def validatepls(self):
         """Emet un son lorsqu'il y a une erreur d'input
         """
-        if not self.hasAcceptableInput(): QApplication.beep() 
+        if not self.hasAcceptableInput(): QtWidgets.QApplication.beep() 
     
     def press(self, o):
         """Lors du clique de la souris, efface le text d'indication
@@ -387,7 +393,7 @@ class MyLineEdit(QLineEdit):
         """Executer si la saisie est modifié, verifie si la saisie est valide. Sinon emet un beep
         """
         self.rewrite()
-        if not self.isValid() : QApplication.beep()
+        if not self.isValid() : QtWidgets.QApplication.beep()
         
     def isStrange(self):
         """à overrider, determine si une saisie est anormale
@@ -480,7 +486,7 @@ class SaisieMesure(MyLineEdit):
         return (float(self.text())>=10 or float(self.text())<=-10)
     
 
-class CalibrationAzimuth(QGroupBox):
+class CalibrationAzimuth(QtWidgets.QGroupBox):
     
     def __init__(self, num, autoValue):
         """Layout pour la saisie des angle de visé de la cible
@@ -494,10 +500,10 @@ class CalibrationAzimuth(QGroupBox):
         self.setTitle("Visée d'ouverture "+str(num))
         
         #Définition du layout
-        self.layoutCal=QFormLayout()
+        self.layoutCal=QtWidgets.QFormLayout()
         #Définition des labels
-        self.indVH=QLabel("V"+str(num)+" sonde en haut")
-        self.indVB=QLabel("V"+str(num)+" sonde en bas")
+        self.indVH=QtWidgets.QLabel("V"+str(num)+" sonde en haut")
+        self.indVB=QtWidgets.QLabel("V"+str(num)+" sonde en bas")
         #Définition de la saisie des angles
         self.angleVH = SaisieAngle(autoValue['haut'])
         self.angleVB = SaisieAngle(autoValue['bas'])
@@ -546,7 +552,7 @@ class CalibrationAzimuth(QGroupBox):
         return (self.angleVB.isValid() & self.angleVH.isValid())
     
 
-class Mesure(QGroupBox):
+class Mesure(QtWidgets.QGroupBox):
     
     def __init__(self, titre, nomMesure, typeMesure, autoValueAngle, autoValueSec):
         """Widget des mesure d'inclinaison et de declinaison
@@ -565,27 +571,27 @@ class Mesure(QGroupBox):
         self.autoValueSec=autoValueSec
         
         #définition du layout
-        self.layoutMesurePr=QGridLayout()
+        self.layoutMesurePr=QtWidgets.QGridLayout()
 
         #si mesure d'inclinaison alors permettre la saisie de l'est magnétique
         if self.typeMesure=="inclinaison":
-            self.indAngleEst=QLabel("Est magnétique")
+            self.indAngleEst=QtWidgets.QLabel("Est magnétique")
             self.indAngleEst.setAlignment(Qt.AlignCenter)
             self.angleEst=SaisieAngle(autoValueAngle['dec'])
             self.layoutMesurePr.addWidget(self.indAngleEst, 0, 1)
             self.layoutMesurePr.addWidget(self.angleEst, 1, 1)
         else: #sinon
-            self.indSpace1=QLabel("")
-            self.indSpace2=QLabel("") #je "créer" du vide pour la symmétrie esthetique
+            self.indSpace1=QtWidgets.QLabel("")
+            self.indSpace2=QtWidgets.QLabel("") #je "créer" du vide pour la symmétrie esthetique
             self.layoutMesurePr.addWidget(self.indSpace1, 0, 1)
             self.layoutMesurePr.addWidget(self.indSpace2, 1, 1)
 
         #definition des indication et des cases de saisie
-        self.indHeure=QLabel("HEURE")
+        self.indHeure=QtWidgets.QLabel("HEURE")
         self.indHeure.setAlignment(Qt.AlignCenter)
-        self.indAngle=QLabel("ANGLE")
+        self.indAngle=QtWidgets.QLabel("ANGLE")
         self.indAngle.setAlignment(Qt.AlignCenter)
-        self.indMesure=QLabel("MESURE (nT)")
+        self.indMesure=QtWidgets.QLabel("MESURE (nT)")
         self.indMesure.setAlignment(Qt.AlignCenter)
         self.layoutMesurePr.addWidget(self.indHeure,2,1)
         self.layoutMesurePr.addWidget(self.indAngle,2,2)
@@ -607,7 +613,7 @@ class Mesure(QGroupBox):
             else:
                 angle = SaisieAngle()
             
-            numero=QLabel(str(i+1))
+            numero=QtWidgets.QLabel(str(i+1))
             self.ligne.append({"label":numero,"heure":heure,"angle":angle,"mesure":mesure})
             self.layoutMesurePr.addWidget(self.ligne[i]['label'], 3+i, 0)
             self.layoutMesurePr.addWidget(self.ligne[i]['heure'], 3+i, 1)
@@ -616,7 +622,7 @@ class Mesure(QGroupBox):
             """
             #cela ne marche pas et je ne sais pas pq
             if i <= 3:
-                print(i)
+                log.info(i)
                 self.ligne[i]['heure'].editingFinished.connect(lambda:self.updateHeure(i))
                 
             """
@@ -752,38 +758,128 @@ def isADate(date):
 
 
 
-def main():
-    """Fonction principale
+
+
+def get_data_dir(app_name) -> pathlib.Path:
+
     """
+    Returns a parent directory path
+    where persistent application data can be stored.
+
+    # linux: ~/.local/share
+    # macOS: ~/Library/Application Support
+    # windows: C:/Users/<USER>/AppData/Roaming
+    """
+
+    home = pathlib.Path.home()
+
+    if sys.platform == "win32":
+        data_dir = home / "AppData/Roaming"
+    elif sys.platform == "linux":
+        data_dir = home / ".local/share"
+    elif sys.platform == "darwin":
+        data_dir = home / "Library/Application Support"
+    else:
+        log.critical("Plateforme inconnue ! %s", sys.platform)
+        raise SystemError
+
+    my_datadir = data_dir / app_name
+
+    try:
+        my_datadir.mkdir(parents=True)
+        log.debug("Le dossier data local n'existait pas et a été créé")
+    except FileExistsError:
+        log.debug("Le dossier data local existe bien")
+    return my_datadir
+
+def get_conf_file(app_name:str, conf_path:pathlib.Path = None) -> pathlib.Path:
+    if not conf_path:
+        log.info("Aucun fichier conf spécifié, utilisation du fichier configuration de l'application")
+        conf_path=get_data_dir(app_name) / 'configuration.json'
+        if not conf_path.is_file():
+            log.warning("Le fichier conf %s n'existe pas, création !", conf_path)
+            # Création du fichier conf
+            with open(conf_path, 'w') as conf_file:
+                conf_file.write(create_conf())
+        return conf_path
+    else:
+        # Verifier que le fichier fonctionne
+        config_tocheck = configparser.ConfigParser()
+        try:
+            config_tocheck.read(conf_path)
+            if not config_tocheck.has_section("STATION"):
+                raise ValueError
+            if not config_tocheck.has_section("AUTOCOMPLETE"):
+                raise ValueError
+            if not config_tocheck.has_section("NOM_STATION"):
+                raise ValueError
+
+            return conf_path
+        
+        except ValueError:
+            log.warning("Le fichier de configuration %s est invalide", conf_path)
+            return get_conf_file(app_name, None)
+
+
+
+def create_conf()->dict:
+    return """
+    [STATION]
+    #Nom de la station en minuscule
+    NOM_STATION     = NA
+    #PATH du chemin où enregistrer les mesures,$YY sera remplacé par les deux derniers chiffres de l'année de la mesure et $STATION par le nom de la station en minuscule 
+    PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour        
+    AZIMUTH_REPERE  = 52.35840
+
+    [AUTOCOMPLETE]
+    AUTO_INC_ANGLE      = 123.----
+    AUTO_DEC_ANGLE      = 233.----
+    AUTO_CAL_ANGLE_HAUT = 247.75--
+    AUTO_CAL_ANGLE_BAS  = 47.75--
+    SEC_ENTRE_MESURES   = 45
+    """
+    #return {
+    #    "STATION":{
+    #        "NOM_STATION" : "NA",
+    #        "SAUVEGARDE"  :  "/home/$STATION/$STATION$YY/mes-abs/mes-jour",
+    #        "AZIMUTH_REPERE" : 52.35840
+    #    },
+    #    "AUTOCOMPLETE":{
+    #        "AUTO_INC_ANGLE"      : "123.----",
+    #        "AUTO_DEC_ANGLE"      : "233.----",
+    #        "AUTO_CAL_ANGLE_HAUT" : "247.75--",
+    #        "AUTO_CAL_ANGLE_BAS"  : "47.75--",
+    #        "SEC_ENTRE_MESURES"   : "45"
+    #    }
+    #}
+
+
+def main():
+    # Linux desktop environments use an app's .desktop file to integrate the app
+    # in to their application menus. The .desktop file of this app will include
+    # the StartupWMClass key, set to app's formal name. This helps associate the
+    # app's windows to its menu item.
+    #
+    # For association to work, any windows of the app must have WMCLASS property
+    # set to match the value set in app's desktop file. For PySide6, this is set
+    # with setApplicationName().
+
+    # Find the name of the module that was used to start the app
+    app_module = sys.modules["__main__"].__package__
+    # Retrieve the app's metadata
+    metadata = importlib.metadata.metadata(app_module)
+
+
     try:
         sys.argv.index("-nv")
     except ValueError:
-        print("🧑 - Programme par \033[35mArthur Perrin - KER72\033[0m")
-        print("💙 - Merci de reporter tous bugs à l'adresse suivante:")
-        print("📬 - \033[31marthurperrin.22@gmail.com\033[0m")
-        print("🔎 - Ajoutez l'argument -nv pour ignorer ce message")
+        log.info("🧑 - Programme par \033[35mArthur Perrin - KER72\033[0m")
+        log.info("💙 - Merci de reporter tous bugs à l'adresse suivante:")
+        log.info("📬 - \033[31marthurperrin.22@gmail.com\033[0m")
+        log.info("🔎 - Ajoutez l'argument -nv pour ignorer ce message")
     
-    PATH_CONF=""
-    #Problème avec pyinstaller https://stackoverflow.com/questions/404744/determining-application-path-in-a-python-exe-generated-by-pyinstaller
-    if getattr(sys, 'frozen', False): #Si fichier est un executable
-        PATH_CONF = os.path.dirname(sys.executable)+'/configurations/globalvar.conf'
-    elif __file__: #Si c'est un script python
-        PATH_CONF=os.path.dirname(__file__)+'/configurations/globalvar.conf'
-    
-    try:
-        tempPath=sys.argv[sys.argv.index("-conf")+1]
-        if os.path.isfile(tempPath):
-            PATH_CONF=tempPath
-        else:
-            print("❌ - \033[31mLe fichier conf spécifié n'existe pas\033[0m")
-    except ValueError:
-        pass
-    except IndexError:
-        print("❌ - \033[31mMauvaise utilisation de l'argument -conf\033[0m")
-    
-    if PATH_CONF=="": #Si aucun fichier de configuration n'a été trouvé
-        print("❌ - \033[31mAucun fichier configuration trouvé !\033[0m")
-        return
+    conf_file = get_conf_file(metadata["Formal-Name"])
+    log.info("Configuration: %s", conf_file)
     
     #Verifie si l'argument date est entré
     date=""
@@ -794,24 +890,16 @@ def main():
         else:
             raise ValueError       
     except ValueError: #Pas de date specifié ou date incorrecte
-        print("📆 - Pas de date specifié avec \"-d jj/mm/yy\"")
+        log.info("📆 - Pas de date specifié avec \"-d jj/mm/yy\"")
     except IndexError:
-        print("❌ - \033[31mMauvaise utilisation de l'argument -d\033[0m")
+        log.info("❌ - \033[31mMauvaise utilisation de l'argument -d\033[0m")
     if date=="":
         dateMes=datetime.today().strftime('%d/%m-/%y')
-        print("📆 - Date actuelle choisie")
-        
-    
-    
-    app = QApplication(sys.argv)
-    window = MainWindow(PATH_CONF, dateMes)
-    window.show()
-    app.exec()
-    
-    
-    
-    
+        log.info("📆 - Date actuelle choisie")
 
 
-if __name__ == '__main__':
-    main()
+    QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
+
+    app = QtWidgets.QApplication(sys.argv)
+    main_window = SaisieMesAbs(conf_file, dateMes)
+    sys.exit(app.exec())
