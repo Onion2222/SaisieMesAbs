@@ -222,11 +222,13 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
 
     def sendSOS(self):
         log.debug("SOS")
-        webbrowser.open(self.metadata["Author-email"])
+        webbrowser.open(f"mailto:{self.metadata['Author-email']}")
 
     def editConf(self):
         log.debug("editConf")
-        subprocess.Popen(['/usr/bin/xdg-open',self.configuration["Chemin_conf"]])
+        subprocess.Popen(['/usr/bin/xdg-open',self.configuration["Chemin_conf"]],
+                         stdout=subprocess.DEVNULL,
+                         stderr=subprocess.STDOUT)
 
     def modifAnglePressed(self, btn) -> None:
         """ Fonction triggered quand la case de modification des angles
