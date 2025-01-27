@@ -3,3 +3,6 @@ build
 logs
 src/saisiemesabs.dist*
 *__pycache__
+.vscode
+venv
+dist
