@@ -55,7 +55,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.setWindowTitle("Enregistrement des mesures magnétiques")
         self.setWindowIcon(QIcon(':/icon.png'))
         # Définition des 4 mesure (déclinaison 1&2, inclinaison 1&2)
-        self.mesure = []  # Array comprennat les widget de mesure
+        # Array comprennant les 4 widgets de mesure
+        self.mesure = []  
         self.mesure.append(
             Mesure(
                 "Premières mesures de déclinaisons",
@@ -104,14 +105,12 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.mesure[3].ligne[0]["angle"].textChanged.connect(
             lambda: self.updateAngleOther(3)
         )
-
         # Définition des mesures d'angle des 2 visées de cible
         self.vise1 = CalibrationAzimuth(1, self.autoCalAngle)
         self.vise1.angleVH.textChanged.connect(
             self.updateCalibration
         )  # Trigger pour l'autocomplete
         self.vise2 = CalibrationAzimuth(2, self.autoCalAngle)
-
         # Definition du groupe contextuel -> Date, Station et Azimuth repère
         self.contexte = QtWidgets.QGroupBox("Contexte")
         # DATE
@@ -134,7 +133,6 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.layoutCon.addRow(self.indDate, self.date)
         self.layoutCon.addRow(self.indAR, self.angleAR)
         self.contexte.setLayout(self.layoutCon)
-
         # Déinition des logos
         self.logoGroup = QtWidgets.QGroupBox("Programme IPEV-EOST n°139")
         self.logoGroup.setMaximumHeight(self.contexte.sizeHint().height())
@@ -145,7 +143,6 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.layoutLogo.addWidget(logoEOST)
         self.layoutLogo.addWidget(logoIPEV)
         self.logoGroup.setLayout(self.layoutLogo)
-
         # Création du layout principale
         self.layoutPrincipale = QtWidgets.QGridLayout()
         # Ajout des widgets
@@ -159,26 +156,26 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.layoutPrincipale.addWidget(self.mesure[3], 3, 1)
         # Définition du bouton d'édition des angles calculés
         self.modifAngle = QtWidgets.QRadioButton("&Editer les angles calculés")
+        # Quand cocher, activer la modification
         self.modifAngle.toggled.connect(
             lambda: self.modifAnglePressed(self.modifAngle)
-        )  # Quand cocher, activer la modification
+        )
         # Définition du bouton enregistrer et de son raccourci
         self.btnEnregistrer = QtWidgets.QPushButton("Enregistrer (Ctrl+S)")
         self.btnEnregistrer.setShortcut("Ctrl+S")
+        # Quand cliquer, enregistrer et quitter
         self.btnEnregistrer.clicked.connect(
             self.enregistrer
-        )  # Quand cliquer, enregistrer et quitter
+        ) 
         # Ajout des deux boutons au layout principale
         self.layoutPrincipale.addWidget(self.modifAngle)
         self.layoutPrincipale.addWidget(self.btnEnregistrer)
         # Mise en place du layout principale
         self.setLayout(self.layoutPrincipale)
-
+        # Contenairisation du layout pour affichage
         container = QtWidgets.QWidget()
         container.setLayout(self.layoutPrincipale)
         self.setCentralWidget(container)
-
-        # Autre:
         # Empèche la modification de la taille de la fenêtre à la main
         self.layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         # Focus la premiere ligne à editer, pour etre plus rapide
@@ -188,30 +185,32 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
 
     def updateGlobaleVar(self):
         """Met à jour les variables du fichier .conf"""
-        config = configparser.ConfigParser()
-        config.read(self.pathConf)
-
-        self.contexteConf = config["STATION"]
-
-        self.autoAngle = {
-            "inc": config["AUTOCOMPLETE"]["AUTO_INC_ANGLE"],
-            "dec": config["AUTOCOMPLETE"]["AUTO_DEC_ANGLE"],
-        }
-        self.autoCalAngle = {
-            "haut": config["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_HAUT"],
-            "bas": config["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_BAS"],
-        }
-
         try:
-            self.secEntreMesures = int(config["AUTOCOMPLETE"]["SEC_ENTRE_MESURES"])
+            config = configparser.ConfigParser()
+            config.read(self.pathConf)
+            self.contexteConf = config["STATION"]
+            self.autoAngle = {
+                "inc": config["AUTOCOMPLETE"]["AUTO_INC_ANGLE"],
+                "dec": config["AUTOCOMPLETE"]["AUTO_DEC_ANGLE"],
+            }
+            self.autoCalAngle = {
+                "haut": config["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_HAUT"],
+                "bas": config["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_BAS"],
+            }
+            try:
+                self.secEntreMesures = int(config["AUTOCOMPLETE"]["SEC_ENTRE_MESURES"])
+            except ValueError:
+                log.info(
+                    "❌ - Erreur, la variable SEC_ENTRE_MESURES de globalvar.conf n'est pas un nombre"
+                )
+                self.secEntreMesures = 30
         except ValueError:
-            log.info(
-                "❌ - Erreur, la variable SEC_ENTRE_MESURES de globalvar.conf n'est pas un nombre"
-            )
-            self.secEntreMesures = 30
+            log.critical("❌ - Le fichier de configuration n'est pas valide")
+            return
 
     def modifAnglePressed(self, btn):
-        """Fonction triggered quand la case de modification des angles calculés est cochée
+        """Fonction triggered quand la case de modification des angles
+        calculés est cochée
 
         Args:
             btn (QtWidgets.QRadioButton): Bouton appuyé
@@ -221,36 +220,39 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             self.mesure[i].stopUpdate(btn.isChecked())
         return
 
-    def updateAngleOther(self, num):
+    def updateAngleOther(self, numMesure):
         """Ordonne la mise à jour des angles de mesure pour l'autocomplet
 
         Args:
-            num (int): index du demandeur
-            de mise à jour
+            numMesure (int): index du demandeur de mise à jour
         """
+        # Si les angles sont édités manuellement, on quitte la fonction
         if self.modifAngle.isChecked():
-            return  # si les angles sont édité manuellement, on quitte la fonction
-        if num == 0 and self.mesure[0].ligne[0]["angle"].isValid(
-            False
-        ):  # Si l'utilisateur à entrer une valeur non vide dans la premiere mesure
+            return
+        # Si l'utilisateur a entré une valeur non vide dans la mesure 1
+        if numMesure == 0 and self.mesure[0].ligne[0]["angle"].isValid(False):
+            # maj angle est magnetique de la mesure 2
             self.mesure[1].updateEst(
                 float(self.mesure[0].ligne[0]["angle"].text())
-            )  # maj angle est magnetique de la mesure 2
+            )
+            # maj angles de la mesure 3
             self.mesure[2].updateAngle(
                 float(self.mesure[0].ligne[0]["angle"].text()), True
-            )  # maj angles de la mesure 3
+            )
+            # maj angle est magnetique de la mesure 4
             self.mesure[3].updateEst(
                 float(self.mesure[0].ligne[0]["angle"].text())
-            )  # maj angle est magnetique de la mesure 4
+            )
             return
-        # maj des angles de la 4e mesure à partir de ceux de la 2e
-        if num == 1 and self.mesure[1].ligne[0]["angle"].isValid(False):
+        # maj des angles de la mesure 4 à partir de ceux de la mesure 2
+        if numMesure == 1 and self.mesure[1].ligne[0]["angle"].isValid(False):
             self.mesure[3].updateAngle(
                 float(self.mesure[1].ligne[0]["angle"].text()), True
             )
             return
-        # maj de l'angle de l'est magnetique de la 4e mesure à partir de ceux de la 3e
-        if num == 2 and self.mesure[2].ligne[0]["angle"].isValid(False):
+        # maj de l'angle de l'est magnetique de la mesure 4
+        # à partir de ceux de la mesure 3
+        if numMesure == 2 and self.mesure[2].ligne[0]["angle"].isValid(False):
             self.mesure[3].updateEst(float(self.mesure[2].ligne[0]["angle"].text()))
             return
 
@@ -579,22 +581,22 @@ class SaisieMesure(MyLineEdit):
 
 class CalibrationAzimuth(QtWidgets.QGroupBox):
 
-    def __init__(self, num, autoValue):
+    def __init__(self, numVisee, autoValue):
         """Layout pour la saisie des angle de visé de la cible
 
         Args:
-            num (int): Numéro de la visée (1 ou 2)
+            numVisee (int): Numéro de la visée (1 ou 2)
             autoValue (collection): Valeur d'angle pour l'autocompletion
         """
         super(CalibrationAzimuth, self).__init__()
         # Titre
-        self.setTitle("Visée d'ouverture " + str(num))
+        self.setTitle("Visée d'ouverture " + str(numVisee))
 
         # Définition du layout
         self.layoutCal = QtWidgets.QFormLayout()
         # Définition des labels
-        self.indVH = QtWidgets.QLabel("V" + str(num) + " sonde en haut")
-        self.indVB = QtWidgets.QLabel("V" + str(num) + " sonde en bas")
+        self.indVH = QtWidgets.QLabel("V" + str(numVisee) + " sonde en haut")
+        self.indVB = QtWidgets.QLabel("V" + str(numVisee) + " sonde en bas")
         # Définition de la saisie des angles
         self.angleVH = SaisieAngle(autoValue["haut"])
         self.angleVB = SaisieAngle(autoValue["bas"])
