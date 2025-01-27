@@ -9,10 +9,13 @@ import sys
 import re
 import logging
 import pathlib
+import argparse
+from datetime import datetime
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QIcon, QPixmap, Qt
 
+from .resources import ressources_rc
 
 # Définition du logger
 log = logging.getLogger(__name__)
@@ -50,7 +53,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
 
         # Titre
         self.setWindowTitle("Enregistrement des mesures magnétiques")
-        # TODO self.setWindowIcon(QIcon(':/icon.png'))
+        self.setWindowIcon(QIcon(':/icon.png'))
         # Définition des 4 mesure (déclinaison 1&2, inclinaison 1&2)
         self.mesure = []  # Array comprennat les widget de mesure
         self.mesure.append(
@@ -135,12 +138,12 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # Déinition des logos
         self.logoGroup = QtWidgets.QGroupBox("Programme IPEV-EOST n°139")
         self.logoGroup.setMaximumHeight(self.contexte.sizeHint().height())
-        # TODO logoEOST=Logo(":/Logo_EOST.png",self.layoutCon.sizeHint().height())
-        # TODO logoIPEV=Logo(":/Logo_IPEV.png",self.layoutCon.sizeHint().height())
+        logoEOST=Logo(":/Logo_EOST.png",self.layoutCon.sizeHint().height())
+        logoIPEV=Logo(":/Logo_IPEV.png",self.layoutCon.sizeHint().height())
         # Arrangement dans un layout
         self.layoutLogo = QtWidgets.QHBoxLayout()
-        # TODO self.layoutLogo.addWidget(logoEOST)
-        # TODO self.layoutLogo.addWidget(logoIPEV)
+        self.layoutLogo.addWidget(logoEOST)
+        self.layoutLogo.addWidget(logoIPEV)
         self.logoGroup.setLayout(self.layoutLogo)
 
         # Création du layout principale
@@ -177,7 +180,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
 
         # Autre:
         # Empèche la modification de la taille de la fenêtre à la main
-        # TODO self.layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        self.layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         # Focus la premiere ligne à editer, pour etre plus rapide
         self.vise1.angleVH.setFocus()
         self.vise1.angleVH.selectAll()
@@ -935,21 +938,18 @@ def get_conf_file(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path
     
     # Verifier que le fichier fonctionne
     config_tocheck = configparser.ConfigParser()
+    log.info("Verification du fichier conf donné")
     try:
-        config_tocheck.read(conf_path)
-        if not config_tocheck.has_section("STATION"):
-            raise ValueError
-        if not config_tocheck.has_section("AUTOCOMPLETE"):
-            raise ValueError
-        if not config_tocheck.has_section("NOM_STATION"):
-            raise ValueError
-        # TODO suite
+        log.debug(conf_path.absolute())
+        config_tocheck.read(conf_path.absolute())
+
 
         return conf_path
 
     except ValueError:
         log.warning("Le fichier de configuration %s est invalide", conf_path)
         return get_conf_file(app_name, None)
+    
 
 
 def create_conf() -> dict:
@@ -998,36 +998,43 @@ def main():
     app_module = sys.modules["__main__"].__package__
     # Retrieve the app's metadata
     metadata = importlib.metadata.metadata(app_module)
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--date',
+        type=lambda s: datetime.strptime(s, '%Y-%m-%d'),
+        help="Execute le script pour une date donnée (format YYYY-mm-dd)"
+    )
+    parser.add_argument("--conf", type=pathlib.Path,
+                        help="Utilise un fichier de configuration défini")
+    parser.add_argument('-nv',
+                        action='store_true',
+                        help="Ignore les logs")
+    args = parser.parse_args()
 
     try:
         sys.argv.index("-nv")
     except ValueError:
         log.info("🧑 - Programme par \033[35mArthur Perrin - KER72\033[0m")
         log.info("💙 - Merci de reporter tous bugs à l'adresse suivante:")
-        log.info("📬 - \033[31marthurperrin.22@gmail.com\033[0m")
-        log.info("🔎 - Ajoutez l'argument -nv pour ignorer ce message")
+        log.info("📬 - \033[31marthurperrin.22@gmail.com\033[0m") #TODO check metadata
 
-    conf_file = get_conf_file(metadata["Formal-Name"])
-    log.info("Configuration: %s", conf_file)
+    if args.conf:
+        confFile = get_conf_file(metadata["Formal-Name"], args.conf)
+    else:
+        confFile = get_conf_file(metadata["Formal-Name"],None)
+    log.info("Configuration: %s", confFile)
 
     # Verifie si l'argument date est entré
-    date = ""
-    try:
-        indexDate = sys.argv.index("-d") + 1
-        if is_a_date(sys.argv[indexDate]):
-            dateMes = sys.argv[indexDate]
-        else:
-            raise ValueError
-    except ValueError:  # Pas de date specifié ou date incorrecte
-        log.info('📆 - Pas de date specifié avec "-d jj/mm/yy"')
-    except IndexError:
-        log.info("❌ - \033[31mMauvaise utilisation de l'argument -d\033[0m")
-    if date == "":
+    if not args.date:
         dateMes = datetime.today().strftime("%d/%m-/%y")
         log.info("📆 - Date actuelle choisie")
+    else:
+        dateMes = args.date.strftime("%d/%m-/%y")
+        
 
     QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
 
     app = QtWidgets.QApplication(sys.argv)
-    main_window = SaisieMesAbs(conf_file, dateMes)
+    main_window = SaisieMesAbs(confFile, dateMes)
     sys.exit(app.exec())
