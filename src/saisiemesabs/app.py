@@ -379,7 +379,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             pathlib.Path: path définit dans le fichier conf
         """
         return pathlib.Path(
-            self.contexteConf["PATH_RE"]
+            self.configuration["Chemin_Sauvegarde"]
             .replace("%$YY", self.date.text()[6:8])
             .replace("$STATION", self.station.text().lower())
         )
