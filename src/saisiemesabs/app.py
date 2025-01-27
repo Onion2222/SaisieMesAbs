@@ -338,7 +338,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         for dicDataMes in dicData['mesures']:
             text += (
                 f"{dicDataMes['heure']}\t"
-                f"{dicDataMes['angle']}\t"
+                f"{dicDataMes['angle'].rjust(8)}\t"
                 f"{dicDataMes['mesure']}\n"
             )
         return text
