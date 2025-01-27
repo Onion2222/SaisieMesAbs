@@ -149,10 +149,9 @@ class MyLineEdit(QtWidgets.QLineEdit):
             else:
                 self.setStyleSheet("color: green;")
             return True
-        else:
-            if color:
-                self.setStyleSheet("color: red;")
-            return False
+        if color:
+            self.setStyleSheet("color: red;")
+        return False
 
 
 class SaisieHeure(MyLineEdit):
@@ -174,12 +173,16 @@ class SaisieAngle(MyLineEdit):
         self.selectionChanged.connect(self.changeSelection)
 
     def changeSelection(self):
-        """Permet la saisie intelligente des données préremplie"""
+        """Permet la selection intelligente des données préremplies"""
         # si tout le text est selectionné
         if self.selectionLength() == len( self.text() ):
             # selection uniquement des "--" initialisé
+            start = self.initext.find("-")
+            stop = len(self.text())
+            if start > stop:
+                return
             self.setSelection(
-                self.initext.find("-"), len(self.text())
+                start, stop
             )
 
     def rewrite(self):
