@@ -36,21 +36,21 @@ date_re = re.compile(r"^\d{2}\/\d{2}\/\d{2}$")
 class SaisieMesAbs(QtWidgets.QMainWindow):
     def __init__(self, path_conf, date):
         super().__init__()
+        # Récupération de la date de la mesure
         self.initdate = date
+        # Récupération du fichier de configuration #TODO faire dans main !
         self.pathConf = path_conf
         self.updateGlobaleVar()
+        # Initialisation de l'interface
+        log.debug("Debut initialisation UI")
         self.initUi()
-        log.debug("Fin init ui")
+        log.debug("Fin initialisation UI")
         self.show()
 
     def initUi(self):
         """initialisation de la fenêtre principale
-
-        Args:
-            arguments (array): liste des arguments
         """
-
-        # Titre
+        # Titre & Icone
         self.setWindowTitle("Enregistrement des mesures magnétiques")
         self.setWindowIcon(QIcon(':/icon.png'))
         # Définition des 4 mesure (déclinaison 1&2, inclinaison 1&2)
@@ -108,7 +108,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.vise1 = CalibrationAzimuth(1, self.autoCalAngle)
         self.vise1.angleVH.textChanged.connect(
             self.updateCalibration
-        )  # Trigger pour l'autocomplet
+        )  # Trigger pour l'autocomplete
         self.vise2 = CalibrationAzimuth(2, self.autoCalAngle)
 
         # Definition du groupe contextuel -> Date, Station et Azimuth repère
