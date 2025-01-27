@@ -985,41 +985,47 @@ SEC_ENTRE_MESURES   = 45
 
 
 def main():
-    # Linux desktop environments use an app's .desktop file to integrate the app
-    # in to their application menus. The .desktop file of this app will include
-    # the StartupWMClass key, set to app's formal name. This helps associate the
-    # app's windows to its menu item.
-    #
-    # For association to work, any windows of the app must have WMCLASS property
-    # set to match the value set in app's desktop file. For PySide6, this is set
-    # with setApplicationName().
 
     # Find the name of the module that was used to start the app
     app_module = sys.modules["__main__"].__package__
     # Retrieve the app's metadata
     metadata = importlib.metadata.metadata(app_module)
 
+    # Parsing des arguments cli
     parser = argparse.ArgumentParser()
+    # Date
     parser.add_argument(
         '--date',
         type=lambda s: datetime.strptime(s, '%Y-%m-%d'),
         help="Execute le script pour une date donnée (format YYYY-mm-dd)"
     )
+    # Configuration
     parser.add_argument("--conf", type=pathlib.Path,
                         help="Utilise un fichier de configuration défini")
+    # Pas de logs
     parser.add_argument('-nv',
                         action='store_true',
                         help="Ignore les logs")
+    parser.add_argument('--verbosite',
+                        type=int, default=1, required=False,
+                        help="Verbosité [0:CRITICAL,1:INFO,2:DEBUG]")
     args = parser.parse_args()
-
-    try:
-        sys.argv.index("-nv")
-    except ValueError:
-        log.info("🧑 - Programme par \033[35m%s\033[0m",metadata["author"])
-        log.info("💙 - Merci de reporter tous bugs à l'adresse suivante:")
-        log.info("📬 - \033[31mmailto:%s\033[0m",metadata["Author-email"])
-        log.info("📝 - Ou sur le repo suivant:")
-        log.info("🌍 - \033[31m%s\033[0m",metadata["Home-page"])
+    
+    
+    # Réglage de la verbosité
+    if args.verbosite <= 0:
+        log.setLevel(logging.CRITICAL)
+    elif args.verbosite <= 1:
+        log.setLevel(logging.INFO)
+    elif args.verbosite > 1:
+        log.setLevel(logging.DEBUG)
+    
+    
+    log.info("🧑 - Programme par \033[35m%s\033[0m",metadata["author"])
+    log.info("💙 - Merci de reporter tous bugs à l'adresse suivante:")
+    log.info("📬 - \033[31mmailto:%s\033[0m",metadata["Author-email"])
+    log.info("📝 - Ou sur le repo suivant:")
+    log.info("🌍 - \033[31m%s\033[0m",metadata["Home-page"])
 
     if args.conf:
         confFile = get_conf_file(metadata["Formal-Name"], args.conf)
