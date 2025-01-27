@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 log_stream_handler = logging.StreamHandler(sys.stdout)
 log_stream_handler.setFormatter(
-    logging.Formatter("%(asctime)s [%(levelname)8s] %(lineno)3d : %(message)s")
+    logging.Formatter("%(asctime)s [%(levelname)8s] %(lineno)4d : %(message)s")
 )
 log.addHandler(log_stream_handler)
 
@@ -928,12 +928,10 @@ def get_dataDir(app_name) -> pathlib.Path:
 
 def get_conf_file(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
     if not conf_path:
-        log.info(
-            "Aucun fichier conf spécifié, utilisation du fichier configuration de l'application"
-        )
+        log.debug("Pas de conf donné")
         conf_path = get_dataDir(app_name) / "configuration.json"
         if not conf_path.is_file():
-            log.warning("Le fichier conf %s n'existe pas, création !", conf_path)
+            log.warning("Le fichier de configuration %s n'existe pas -> création", conf_path)
             # Création du fichier conf
             with open(conf_path, "w", encoding='utf-8') as conf_file:
                 conf_file.write(create_conf())
@@ -995,7 +993,7 @@ def main():
     parser = argparse.ArgumentParser()
     # Date
     parser.add_argument(
-        '--date',
+        "--date",
         type=lambda s: datetime.strptime(s, '%Y-%m-%d'),
         help="Execute le script pour une date donnée (format YYYY-mm-dd)"
     )
@@ -1003,9 +1001,9 @@ def main():
     parser.add_argument("--conf", type=pathlib.Path,
                         help="Utilise un fichier de configuration défini")
     # Verbosité
-    parser.add_argument('--verbosite',
+    parser.add_argument('-v', "--verbosite",
                         type=int, default=1, required=False,
-                        help="Verbosité [0:CRITICAL,1:INFO,2:DEBUG]")
+                        help="Verbosité [0:CRITICAL,1:INFO,2:DEBUG] (defaut: 1)")
     args = parser.parse_args()
     
     
@@ -1024,11 +1022,12 @@ def main():
     log.info("📝 - Ou sur le repo suivant:")
     log.info("🌍 - \033[31m%s\033[0m",metadata["Home-page"])
 
+    # Recupération du fichier de configuration
     if args.conf:
         confFile = get_conf_file(metadata["Formal-Name"], args.conf)
     else:
         confFile = get_conf_file(metadata["Formal-Name"],None)
-    log.info("Configuration: %s", confFile)
+    log.info("🎛️ - Configuration: %s", confFile)
 
     # Verifie si l'argument date est entré
     if not args.date:
@@ -1041,5 +1040,6 @@ def main():
     QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
 
     app = QtWidgets.QApplication(sys.argv)
+    log.debug("Démarrage de l'application")
     main_window = SaisieMesAbs(confFile, dateMes)
     sys.exit(app.exec())
