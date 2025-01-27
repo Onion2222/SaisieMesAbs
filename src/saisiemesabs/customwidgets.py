@@ -1,6 +1,11 @@
+""" Widget customisé
+"""
+
+import re
 from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap, Qt
-import re
+
+# pylint: disable= invalid-name
 
 heure_re = re.compile(r"^(([01]\d|2[0-3])([0-5]\d)|24:00)([0-5]\d)$")
 angle_re = re.compile(r"^(?:[0-3]*[0-9]{1,2}|400)(?:\.[0-9]{4,})$")
@@ -68,7 +73,7 @@ class MyLineEdit(QtWidgets.QLineEdit):
             text (str): Texte d'indication
         """
         # Variable indiquant si la valeur a été modifiée par l'homme (pour l'autocomplet)
-        self.editedByHand = False  
+        self.editedByHand = False
         super().__init__()
         self.initext = text
         self.setAlignment(Qt.AlignCenter)
@@ -314,7 +319,7 @@ class Mesure(QtWidgets.QGroupBox):
         else:
             # Création de vide pour la symmétrie esthetique
             self.indSpace1 = QtWidgets.QLabel("")
-            self.indSpace2 = QtWidgets.QLabel("") 
+            self.indSpace2 = QtWidgets.QLabel("")
             self.layoutMesurePr.addWidget(self.indSpace1, 0, 1)
             self.layoutMesurePr.addWidget(self.indSpace2, 1, 1)
 
