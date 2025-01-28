@@ -493,7 +493,7 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
     """
     if not conf_path:
         log.debug("Pas de conf donné")
-        conf_path = get_dataDir(app_name) / "configuration.json"
+        conf_path = get_dataDir(app_name) / "configuration.ini"
         if not conf_path.is_file():
             log.warning("Le fichier de configuration %s n'existe pas -> création", conf_path)
             # Création du fichier conf
