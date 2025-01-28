@@ -51,7 +51,7 @@ Afin de garantir la compatibilité sur votre systeme, vous allez devoir vous mê
 
 Lors de votre premiere utilisation il faut configurer la station. Pour cela il faut cliquer dans la barre de menu dans la partie supérieure gauche `Configuration` -> `Editer`.
 
-> C'est l'editeur de fichier `.txt` par défaut de votre système qui est utilisé. Pensez à le configurer pour correspondre à vos besoins !
+> C'est l'editeur de fichier `.txt` par défaut de votre système qui est utilisé. Pensez à le configurer pour correspondre à vos besoins grâce à la commande: `xdg-mime default org.gnome.TextEditor.desktop text/plain` (exemple pour `gedit`)
 
 > Si vous n'arrivez pas à obtenir un editeur correct, vous pouvez entrer votre configuration ici: `~/.local/share/SaisieMesAbs/configuration.txt`
 
@@ -95,4 +95,4 @@ Made in **KER72@TAAF** 🇹🇫
 By **Arthur Perrin** 🐧
 
 ### TODO
-[ ] Arg pour choisir editeur
+[ ] Arg pour choisir editeur (--force-nano ?)
