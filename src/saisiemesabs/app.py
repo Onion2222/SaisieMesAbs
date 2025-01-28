@@ -453,8 +453,10 @@ def analyse_conf(chemin_fichier: pathlib.Path) -> dict:
             "Mesure" : int(contentConfig["AUTOCOMPLETE"]["SEC_ENTRE_ETAPES"])
         }
         return configuration
-    except ValueError:
-        log.critical("❌ - Le fichier de configuration n'est pas valide")
+    except (ValueError, configparser.MissingSectionHeaderError) as exc:
+        log.error("❌ - Le fichier de configuration %s n'est pas valide",
+                     chemin_fichier, exc_info=exc)
+        raise ValueError("Le fichier de configuration n'est pas valide") from exc
 
 def get_dataDir(app_name) -> pathlib.Path:
     """
@@ -493,7 +495,7 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
     """
     if not conf_path:
         log.debug("Pas de conf donné")
-        conf_path = get_dataDir(app_name) / "configuration.ini"
+        conf_path = get_dataDir(app_name) / "configuration.txt"
         if not conf_path.is_file():
             log.warning("Le fichier de configuration %s n'existe pas -> création", conf_path)
             # Création du fichier conf
@@ -502,6 +504,8 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
         try:
             return analyse_conf(conf_path)
         except (KeyError, ValueError):
+            log.critical("Il semble que votre configuration par défaut soit incompatible ou corrompue.")
+            log.warning("Création d'une nouvelle config")
             with open(conf_path, "w", encoding='utf-8') as conf_file:
                 conf_file.write(create_conf())
             return analyse_conf(conf_path)
@@ -515,7 +519,7 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
         return analyse_conf(conf_path)
 
     except (ValueError, KeyError):
-        log.warning("Le fichier de configuration %s est invalide", conf_path)
+        log.warning("Utilisation du fichier conf par défaut")
         return get_conf(app_name, None)
 
 
@@ -607,7 +611,7 @@ def main():
         conf = get_conf(metadata["Formal-Name"], args.conf)
     else:
         conf = get_conf(metadata["Formal-Name"],None)
-    log.info(conf)
+
     log.info("🎛️ - Configuration: %s", conf['Chemin_conf'])
 
     # Verifie si l'argument date est entré
