@@ -13,6 +13,7 @@ import pathlib
 import argparse
 import webbrowser
 import subprocess
+from shutil import which
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QIcon, Qt, QAction
@@ -41,7 +42,10 @@ DEBUG = False
 class SaisieMesAbs(QtWidgets.QMainWindow):
     """ Fenêtre principale
     """
-    def __init__(self, date, metadata, configuration) -> None:
+    def __init__(self, date: str,
+                 metadata: dict,
+                 configuration: dict,
+                 pathEditor:str=None) -> None:
         super().__init__()
         # Récupération de la date de la mesure
         self.initdate = date
@@ -49,6 +53,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.metadata = metadata
         # Récupération du fichier de configuration
         self.configuration = configuration
+        # Récupération de l'editeur
+        self.editeur = pathEditor
         # Initialisation de l'interface
         log.debug("Debut initialisation UI")
         self.initUi()
@@ -216,19 +222,19 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
 
         self.show()
 
-    def openHelp(self):
+    def openHelp(self) -> None:
         log.debug("Documentation")
         webbrowser.open(self.metadata["Home-page"])
 
-    def sendSOS(self):
+    def sendSOS(self) -> None :
         log.debug("SOS")
         webbrowser.open(f"mailto:{self.metadata['Author-email']}")
 
-    def editConf(self):
+    def editConf(self) -> None:
         log.debug("editConf")
-        subprocess.Popen(['/usr/bin/xdg-open',self.configuration["Chemin_conf"]],
-                         stdout=subprocess.DEVNULL,
-                         stderr=subprocess.STDOUT)
+        if not self.editeur:
+            self.editeur='/usr/bin/xdg-open'
+        subprocess.Popen([self.editeur,self.configuration["Chemin_conf"]])
 
     def modifAnglePressed(self, btn) -> None:
         """ Fonction triggered quand la case de modification des angles
@@ -432,7 +438,7 @@ def is_a_date(date) -> bool:
 
 def analyse_conf(chemin_fichier: pathlib.Path) -> dict:
     try:
-        log.info("Analyse du fichier %s", chemin_fichier)
+        log.info("🔍 - Analyse du fichier %s", chemin_fichier)
         contentConfig = configparser.ConfigParser()
         contentConfig.read(chemin_fichier)
         configuration:dict = {}
@@ -572,13 +578,17 @@ def main():
     parser.add_argument("--conf", type=pathlib.Path,
                         help="Utilise un fichier de configuration défini")
     # Verbosité
-    parser.add_argument('-v', "--verbosite",
+    parser.add_argument('-v', "--verbosity",
                         type=int, default=1, required=False,
                         help="Verbosité [0:CRITICAL,1:INFO,2:DEBUG] (defaut: 1)")
     # Debug
     parser.add_argument('--debug',
                         action='store_true',
                         help="Mode DEBUG (dev seulement !)")
+    # Debug
+    parser.add_argument('--editor',
+                        type=str,
+                        help="Permet de choisir son editor gui (gedit, gvim etc...)")
 
     args = parser.parse_args()
 
@@ -589,12 +599,13 @@ def main():
         args.verbosite=1000
 
     # Réglage de la verbosité
-    if args.verbosite <= 0:
+    if args.verbosity <= 0:
         log.setLevel(logging.CRITICAL)
-    elif args.verbosite <= 1:
+    elif args.verbosity <= 1:
         log.setLevel(logging.INFO)
-    elif args.verbosite > 1:
+    elif args.verbosity > 1:
         log.setLevel(logging.DEBUG)
+        
 
     log.debug("Arguments: %s",args)
     log.debug("DEBUG: %s",DEBUG)
@@ -612,7 +623,7 @@ def main():
     else:
         conf = get_conf(metadata["Formal-Name"],None)
 
-    log.info("🎛️ - Configuration: %s", conf['Chemin_conf'])
+    log.info("🎛️  - Configuration: %s", conf['Chemin_conf'])
 
     # Verifie si l'argument date est entré
     if not args.date:
@@ -622,9 +633,18 @@ def main():
         dateMes = args.date.strftime("%d/%m-/%y")
         log.info("📆 - %s choisie", dateMes)
 
+    pathEditor: str = None
+    if args.editor:
+        pathEditor = which(args.editor)
+        if not pathEditor:
+            log.warning("❌ - L'editeur %s n'existe pas !", args.editor)
+            sys.exit(1)
+        log.info("🖋️  - Editeur %s selectionné", pathEditor)
+            
+
     QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
 
     app = QtWidgets.QApplication(sys.argv)
     log.debug("Démarrage de l'application")
-    main_window = SaisieMesAbs(dateMes, metadata, conf)
+    main_window = SaisieMesAbs(dateMes, metadata, conf, pathEditor)
     sys.exit(app.exec())
