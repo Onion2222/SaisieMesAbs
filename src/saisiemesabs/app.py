@@ -70,6 +70,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # Définition des 4 mesure (déclinaison 1&2, inclinaison 1&2)
         # Array comprennant les 4 widgets de mesure
         self.mesure = []
+        # Définition du cadre 0 sup-gauche: déclinaison 1
         self.mesure.append(
             Mesure(
                 "Premières mesures de déclinaisons",
@@ -79,9 +80,14 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 self.configuration['Delai']["Etape"],
             )
         )
+        # Trigger pour l'autocompletion
+        # Quand l'angle de la premiere ligne est rentré:
+        # Mise à jour de l'angle EST des cadres 1 et 3 (inc 1 & 2)
+        # Mise à jour des angles du cadre 2 (déc 2)
         self.mesure[0].ligne[0]["angle"].textChanged.connect(
             lambda: self.updateAngleOther(0)
-        )  # Trigger pour l'autocomplet
+        )
+        # Définition du cadre 1 sup-droit: inclinaison 1
         self.mesure.append(
             Mesure(
                 "Premières mesures d'inclinaisons",
@@ -91,9 +97,13 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 self.configuration['Delai']["Etape"],
             )
         )
+        # Trigger pour l'autocompletion
+        # Quand l'angle de la premiere ligne est rentré:
+        # Mise à jour des angles du cadre 3 (inc 2)
         self.mesure[1].ligne[0]["angle"].textChanged.connect(
             lambda: self.updateAngleOther(1)
         )
+        # Définition du cadre 2 inf-gauche: déclinaison 2
         self.mesure.append(
             Mesure(
                 "Deuxiemes mesures de déclinaisons",
@@ -103,9 +113,13 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 self.configuration['Delai']["Etape"],
             )
         )
+        # Trigger pour l'autocompletion
+        # Quand l'angle de la premiere ligne est rentré:
+        # Mise à jour de l'angle EST de cadre 3 (inc 2)
         self.mesure[2].ligne[0]["angle"].textChanged.connect(
             lambda: self.updateAngleOther(2)
         )
+        # Définition du cadre 3 inf-droit: inclinaison 2
         self.mesure.append(
             Mesure(
                 "Deuxiemes mesures d'inclinaisons",
@@ -115,22 +129,25 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 self.configuration['Delai']["Etape"],
             )
         )
-        self.mesure[3].ligne[0]["angle"].textChanged.connect(
-            lambda: self.updateAngleOther(3)
-        )
+
         # Définition des mesures d'angle des 2 visées de cible
+        # Visée 1
         self.vise1 = CalibrationAzimuth(1, self.configuration["Calibration"])
+        # Quand l'angle haut de la visée 1 est entré
+        # MaJ de l'angle haut de la visée 2
         self.vise1.angleVH.textChanged.connect(
             self.updateCalibration
-        )  # Trigger pour l'autocomplete
+        ) 
+        # Visée 2
         self.vise2 = CalibrationAzimuth(2, self.configuration["Calibration"])
-        # Definition du groupe contextuel -> Date, Station et Azimuth repère
+        # GROUPE CONTEXTUEL
+        # Date, Station et Azimuth repère
         self.contexte = QtWidgets.QGroupBox("Contexte")
-        # DATE
+        # Date
         self.indDate = QtWidgets.QLabel("Date")
         self.date = SaisieDate()
         self.date.setText(self.initdate)
-        # STATION
+        # Station
         self.layoutStation = QtWidgets.QFormLayout()
         self.indStation = QtWidgets.QLabel("Station")
         self.station = QtWidgets.QLineEdit(self.configuration["Station"].upper())
@@ -146,7 +163,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.layoutCon.addRow(self.indDate, self.date)
         self.layoutCon.addRow(self.indAR, self.angleAR)
         self.contexte.setLayout(self.layoutCon)
-        # Déinition des logos
+        # LOGO
+        # Définition des logos
         self.logoGroup = QtWidgets.QGroupBox("Programme IPEV-EOST n°139")
         self.logoGroup.setMaximumHeight(self.contexte.sizeHint().height())
         logoEOST=Logo(":/Logo_EOST.png",self.layoutCon.sizeHint().height())
@@ -156,9 +174,22 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.layoutLogo.addWidget(logoEOST)
         self.layoutLogo.addWidget(logoIPEV)
         self.logoGroup.setLayout(self.layoutLogo)
+        # Définition du bouton d'édition des angles calculés
+        self.modifAngle = QtWidgets.QRadioButton("&Editer les angles calculés")
+        # Quand cocher: activer la modification des angles
+        self.modifAngle.toggled.connect(
+            lambda: self.modifAngleEtatChanged(self.modifAngle)
+        )
+        # Définition du bouton enregistrer et de son raccourci [ctrl+s]
+        self.btnEnregistrer = QtWidgets.QPushButton("Enregistrer (Ctrl+S)")
+        self.btnEnregistrer.setShortcut("Ctrl+S")
+        # Quand cliquer: enregistrer et quitter
+        self.btnEnregistrer.clicked.connect(
+            self.enregistrer
+        )
         # Création du layout principale
         self.layoutPrincipale = QtWidgets.QGridLayout()
-        # Ajout des widgets
+        # Ajout des widgets dans ce layout
         self.layoutPrincipale.addWidget(self.contexte, 0, 0)
         self.layoutPrincipale.addWidget(self.logoGroup, 0, 1)
         self.layoutPrincipale.addWidget(self.vise1, 1, 0)
@@ -167,35 +198,18 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.layoutPrincipale.addWidget(self.mesure[1], 2, 1)
         self.layoutPrincipale.addWidget(self.mesure[2], 3, 0)
         self.layoutPrincipale.addWidget(self.mesure[3], 3, 1)
-        # Définition du bouton d'édition des angles calculés
-        self.modifAngle = QtWidgets.QRadioButton("&Editer les angles calculés")
-        # Quand cocher, activer la modification
-        self.modifAngle.toggled.connect(
-            lambda: self.modifAnglePressed(self.modifAngle)
-        )
-        # Définition du bouton enregistrer et de son raccourci
-        self.btnEnregistrer = QtWidgets.QPushButton("Enregistrer (Ctrl+S)")
-        self.btnEnregistrer.setShortcut("Ctrl+S")
-        # Quand cliquer, enregistrer et quitter
-        self.btnEnregistrer.clicked.connect(
-            self.enregistrer
-        )
         # Ajout des deux boutons au layout principale
         self.layoutPrincipale.addWidget(self.modifAngle)
         self.layoutPrincipale.addWidget(self.btnEnregistrer)
         # Mise en place du layout principale
         self.setLayout(self.layoutPrincipale)
-        # Contenairisation du layout pour affichage
+        # Empèche la modification de la taille de la fenêtre à la main
+        self.layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        # Contenairisation du layout pour affichage dans la fenêtre
         container = QtWidgets.QWidget()
         container.setLayout(self.layoutPrincipale)
         self.setCentralWidget(container)
-        # Empèche la modification de la taille de la fenêtre à la main
-        self.layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        # Focus la premiere ligne à editer, pour etre plus rapide
-        self.vise1.angleVH.setFocus()
-        self.vise1.angleVH.selectAll()
-        
-        # Menu barre
+        # BARRE DE MENU
         self.menuBar = QtWidgets.QMenuBar()
         # - Configuration
         configuration_menu = self.menuBar.addMenu('Configuration')
@@ -219,36 +233,47 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         aide.addAction(self.actionHelp)
         aide.addAction(self.actionSos)
         self.setMenuBar(self.menuBar)
-
+        # Focus la premiere ligne à editer, pour etre plus rapide
+        self.vise1.angleVH.setFocus()
+        self.vise1.angleVH.selectAll()
+        # Affichage de la fenêtre
         self.show()
 
     def openHelp(self) -> None:
+        """ Ouvre le lien vers la documentation
+        """
         log.debug("Documentation")
         webbrowser.open(self.metadata["Home-page"])
 
     def sendSOS(self) -> None :
+        """ Ouvre une page pour ecrire un mail au dev
+        """
         log.debug("SOS")
         webbrowser.open(f"mailto:{self.metadata['Author-email']}")
 
     def editConf(self) -> None:
+        """ Permet d'éditer la configuration
+            Si un editeur est donné en argument, l'utilise
+            Sinon utilise celui pas défaut (xdg-open)
+        """
         log.debug("editConf")
         if not self.editeur:
             self.editeur='/usr/bin/xdg-open'
         subprocess.Popen([self.editeur,self.configuration["Chemin_conf"]])
 
-    def modifAnglePressed(self, btn) -> None:
-        """ Fonction triggered quand la case de modification des angles
+    def modifAngleEtatChanged(self, btn: QtWidgets.QRadioButton) -> None:
+        """ Fonction interpretée quand la case de modification des angles
             calculés est cochée
 
         Args:
-            btn (QtWidgets.QRadioButton): Bouton appuyé
+            btn (QtWidgets.QRadioButton): Case de modification des angles calculés
         """
         # Stopper l'autocompletion des 4 mesures
         for i in range(4):
             self.mesure[i].stopUpdate(not btn.isChecked())
 
-    def updateAngleOther(self, numMesure) -> None:
-        """ Ordonne la mise à jour des angles de mesure pour l'autocomplet
+    def updateAngleOther(self, numMesure: int) -> None:
+        """ Ordonne la mise à jour des angles de mesure pour l'autocompletion
 
         Args:
             numMesure (int): index du demandeur de mise à jour
@@ -294,7 +319,6 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
     def enregistrer(self) -> None:
         """ Enregistre les données dans un fichier re et quitte l'application
         """
-        log.debug("Enregistrement... (DEBUG %s)",DEBUG)
         # Ces deux lignes permettent de forcer un rewrite()
         # sur les QtWidgets.QLineEdit et ainsi reformater les nombres
         self.setFocus()
@@ -303,6 +327,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         if not self.validateAll():
             # si mesure pas valide, beep
             QtWidgets.QApplication.beep()
+            log.warning("La mesure n'est pas valide")
             # Si pas DEBUG, ne rien faire (la mesure n'est pas valide)
             if not DEBUG:
                 return
@@ -311,20 +336,21 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 "La mesure n'est pas valide, mais DEBUG=True"
             )
 
+        # Génération de la sauvegarde
         saveMesure = (
             f'{self.station.text().lower()} {self.date.text().replace("/", " ")}'
             ' Methode des residus\n'
             f'visees balise\n'
             f' {self.angleAR.text()}\n'
-            f'{self.getAziCible(self.vise1)[0]} {self.getAziCible(self.vise1)[1]}\n'
-            f'{self.getAziCible(self.vise2)[0]} {self.getAziCible(self.vise2)[1]}\n')
+            f'{self.vise1.getAzi()[0]} {self.vise1.getAzi()[1]}\n'
+            f'{self.vise2.getAzi()[0]} {self.vise2.getAzi()[1]}\n')
         for eMesure in self.mesure:
             saveMesure += (
-                f"{self.dicDataToString( self.getMesure(eMesure) )}\n"
+                f"{self.dicDataToString( eMesure.getData() )}\n"
             )
         log.debug(saveMesure)
 
-        # Enregistrement
+        # Enregistrement dans un fichier
         saveFilename = self.generateFileName()
         saveFile = self.generatePath() / saveFilename
         try:
@@ -342,17 +368,17 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             )
             with open(saveFilename, "w", encoding='utf-8') as saveFile:
                 saveFile.write(saveMesure)
-        # Quittr la fenêtre
+        # Quitter la fenêtre
         self.close()
 
-    def dicDataToString(self, dicData) -> str:
+    def dicDataToString(self, dicData: dict) -> str:
         """ Convertit un dictionnaire de donnée en string pour l'enregistrement
 
         Args:
-            dicData (dictionnaire): dictionnaire de donnée générer par Mesure
+            dicData (dict): dictionnaire de donnée générer par Mesure
 
         Returns:
-            str: string de donnée format re
+            str: string de donnée format EOST
         """
         text = ""
         if dicData['est']:
@@ -402,28 +428,6 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             f"re{arrayDate[1]}{arrayDate[0]}{heure[0:2]}{arrayDate[2]}."
             f"{self.station.text().lower()}"
         )
-
-    def getAziCible(self, vise: CalibrationAzimuth) -> tuple:
-        """recupère les angle de visée
-
-        Args:
-            vise (CalibrationAzimuth): objet de visé
-
-        Returns:
-            tuple (str, str): angle visée cible 1
-        """
-        return vise.getAzi()
-
-    def getMesure(self, mesure) -> dict:
-        """Récupère le dictionnaire de mesure
-
-        Args:
-            mesure (Mesure): Objet mesure à lire
-
-        Returns:
-            dict: dictionnaire comprennant les différentes données d'une mesure
-        """
-        return mesure.getData()
 
 def is_a_date(date) -> bool:
     """Renvoie True si la date jj/mm/aa est valide
@@ -506,11 +510,30 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
             log.warning("Le fichier de configuration %s n'existe pas -> création", conf_path)
             # Création du fichier conf
             with open(conf_path, "w", encoding='utf-8') as conf_file:
-                conf_file.write(create_conf())
+                conf_file.write(
+                    "[STATION]\n\n"
+                    "# Nom de la station en minuscule\n"
+                    "NOM_STATION     = NA\n\n"
+                    "#PATH du chemin où enregistrer les mesures\n"
+                    "# - $YY sera remplacé par les deux derniers chiffres de l'année de la mesure\n"
+                    "# - $STATION par le nom de la station en minuscule\n"
+                    "PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour\n\n"
+                    "# Azimuth de la cible\n"
+                    "AZIMUTH_REPERE  = 52.35840\n\n"
+                    "[AUTOCOMPLETE]\n"
+                    "AUTO_INC_ANGLE      = 123.----\n"
+                    "AUTO_DEC_ANGLE      = 233.----\n"
+                    "AUTO_CAL_ANGLE_HAUT = 247.75--\n"
+                    "AUTO_CAL_ANGLE_BAS  = 47.75--\n"
+                    "SEC_ENTRE_MESURES   = 45\n"
+                    "SEC_ENTRE_ETAPES    = 70\n\n\n"
+                    "# N'oubliez pas de relancer l'application !\n"
+                )
         try:
             return analyse_conf(conf_path)
         except (KeyError, ValueError):
-            log.critical("Il semble que votre configuration par défaut soit incompatible ou corrompue.")
+            log.critical("Il semble que votre configuration par "
+                         "défaut soit incompatible ou corrompue.")
             log.warning("Création d'une nouvelle config")
             with open(conf_path, "w", encoding='utf-8') as conf_file:
                 conf_file.write(create_conf())
@@ -530,34 +553,7 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
 
 
 
-def create_conf() -> str:
-    """ Créer un string de configuration
-
-    Returns:
-        str: configuration
-    """
-    return (
-        "[STATION]\n\n"
-        "# Nom de la station en minuscule\n"
-        "NOM_STATION     = NA\n\n"
-        "#PATH du chemin où enregistrer les mesures\n"
-        "# - $YY sera remplacé par les deux derniers chiffres de l'année de la mesure\n"
-        "# - $STATION par le nom de la station en minuscule\n"
-        "PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour\n\n"
-        "# Azimuth de la cible\n"
-        "AZIMUTH_REPERE  = 52.35840\n\n"
-        "[AUTOCOMPLETE]\n"
-        "AUTO_INC_ANGLE      = 123.----\n"
-        "AUTO_DEC_ANGLE      = 233.----\n"
-        "AUTO_CAL_ANGLE_HAUT = 247.75--\n"
-        "AUTO_CAL_ANGLE_BAS  = 47.75--\n"
-        "SEC_ENTRE_MESURES   = 45\n"
-        "SEC_ENTRE_ETAPES    = 70\n\n\n"
-        "# N'oubliez pas de relancer l'application !\n"
-    )
-
-
-def main():
+def main() -> None:
     """ Main
     """
 
@@ -588,7 +584,7 @@ def main():
     # Debug
     parser.add_argument('--editor',
                         type=str,
-                        help="Permet de choisir son editor gui (gedit, gvim etc...)")
+                        help="Permet de choisir son editor gui (gedit, gvim, etc...)")
 
     args = parser.parse_args()
 
