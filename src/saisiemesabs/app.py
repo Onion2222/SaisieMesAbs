@@ -607,16 +607,17 @@ def main():
         log.setLevel(logging.DEBUG)
         
 
-    log.debug("Arguments: %s",args)
-    log.debug("DEBUG: %s",DEBUG)
 
 
     log.info("🧑 - Programme par \033[35m%s\033[0m",metadata["author"])
-    log.info("💙 - Merci de reporter tous bugs à l'adresse suivante:")
-    log.info("📬 - \033[31mmailto:%s\033[0m",metadata["Author-email"])
-    log.info("📝 - Ou sur le repo suivant:")
-    log.info("🌍 - \033[31m%s\033[0m",metadata["Home-page"])
-
+    log.info("📬 - Merci de reporter tous bugs à l'adresse mail suivante: \033[31mmailto:%s\033[0m",metadata["Author-email"])
+    log.info("🌍 - Ou sur le repo suivant: \033[31m%s\033[0m",metadata["Home-page"])
+    log.info("👁️  - Niveau de verbosité: %s", logging.getLevelName(log.level))
+    
+    log.debug("Arguments: %s",args)
+    log.debug("Mode: DEBUG=%s",DEBUG)
+    log.debug("Metadate: %s",metadata)
+    
     # Recupération du fichier de configuration
     if args.conf:
         conf = get_conf(metadata["Formal-Name"], args.conf)
