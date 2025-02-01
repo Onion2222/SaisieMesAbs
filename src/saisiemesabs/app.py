@@ -16,7 +16,7 @@ import subprocess
 from shutil import which
 
 from PySide6 import QtWidgets, QtCore
-from PySide6.QtGui import QIcon, Qt, QAction
+from PySide6.QtGui import QIcon, Qt, QAction, QShortcut
 
 from .resources import ressources_rc
 from .customwidgets import (
@@ -193,9 +193,10 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.btnEnregistrer = QtWidgets.QPushButton("Enregistrer (Ctrl+S)")
         self.btnEnregistrer.setShortcut("Ctrl+S")
         # Quand cliquer: enregistrer et quitter
-        self.btnEnregistrer.clicked.connect(
-            self.enregistrer
-        )
+        self.btnEnregistrer.clicked.connect(self.enregistrer)
+        # Ctrl+Q pour quitter
+        self.shortcut = QShortcut("Ctrl+Q", self)
+        self.shortcut.activated.connect(self.close)
         # Création du layout principale
         self.layoutPrincipale = QtWidgets.QGridLayout()
         # Ajout des widgets dans ce layout
