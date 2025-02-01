@@ -13,6 +13,7 @@ import pathlib
 import argparse
 import webbrowser
 import subprocess
+import traceback
 from shutil import which
 
 from PySide6 import QtWidgets, QtCore
@@ -40,9 +41,14 @@ log_stream_handler.setFormatter(
 )
 # Ajout du handler au logger
 log.addHandler(log_stream_handler)
+# Ajout d'un gestionnaire des erreurs innatendues
+def exc_handler(exctype, value, tb):
+    log.exception(''.join(traceback.format_exception(exctype, value, tb)))
+sys.excepthook = exc_handler
 
 # Variable globale de débogage, initialisée à False
 DEBUG = False
+
 
 
 class SaisieMesAbs(QtWidgets.QMainWindow):
@@ -754,7 +760,6 @@ def main() -> None:
             log.warning("L'éditeur %s n'existe pas !", args.editor)
             sys.exit(1)
         log.info("🖋️  - Éditeur %s sélectionné", pathEditor)
-
 
     main_window = SaisieMesAbs(dateMes, metadata, conf, pathEditor)
     sys.exit(app.exec())
