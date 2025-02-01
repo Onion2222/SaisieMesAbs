@@ -402,7 +402,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             saveFile = pathlib.Path(f"./{saveFilename}")
             with open(saveFile, "w", encoding='utf-8') as file:
                 file.write(saveMesure)
-            log.warning("Mesure sauvegardée sous %s", saveFile)
+            log.info("Mesure sauvegardée sous %s", saveFile)
         # Ferme l'application après l'enregistrement
         self.close()
 
