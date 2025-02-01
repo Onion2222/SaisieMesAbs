@@ -8,9 +8,9 @@ Outil de saisie des mesures du champs magnétique terrestre par la méthode des 
 
 ## Fonctionnalités
 
-- **Autocomplétion intelligente des angles et des horaires** : Les heures de mesure et les angles sont automatiquements calculé 💡
-- **Configuration rapide** : Le nom de station et les ordre de grandeur des angles sont configurable pour aller encore plus vite 🚀
-- **Compatible cli** : Vous pouvez le lancer avec des paramètres specifiques (date, configuration...) 💻
+- **Autocomplétion intelligente des angles et des horaires** : Les heures de mesure et les angles sont automatiquements calculés 💡
+- **Configuration rapide** : Le nom de la station et les ordres de grandeur des angles sont configurable pour aller encore plus vite 🚀
+- **Compatible cli** : Vous pouvez le lancer avec des paramètres spécifiques (date, configuration...) 💻
 
 ## Installation
 
@@ -21,38 +21,47 @@ Afin de garantir la compatibilité sur votre systeme, vous allez devoir vous mê
 > Un package `.deb` est disponible uniquement pour **ubuntu noble (amd64)**.
 
 1. **Cloner le projet**:
+
     ```bash
     git clone https://github.com/Onion2222/SaisieMesAbs
     cd SaisieMesAbs
     ```
+
 2. **Installer un environnement virtuel**
+
     ```bash
     python -m venv venv
     source ./venv/bin/activate
     ```
+
 3. **Installer briefcase**
+
     ```bash
     pip install briefcase
     ```
+
 4. **Construire l'application**
+
     ```bash
     briefcase build
     ```
+
     L'application se trouvera dans `./build/saisiemesabs/<distribution>/<version>/saisiemesabs-x.y.z/usr/bin/saisiemesabs`
 
 > Si vous souhaitez une version .deb plus simple à installer:
+>
 > ```bash
 > briefcase package
 > ```
+>
 > Le package se trouvera dans `./dist`
-
 
 ## Configuration
 
 Lors de votre premiere utilisation il faut configurer la station. Pour cela il faut cliquer dans la barre de menu dans la partie supérieure gauche `Configuration` -> `Editer`.
 
 > C'est l'editeur de fichier `.txt` par défaut de votre système qui est utilisé. S'il ne correspond pas à votre besoin, utiliser l'argument `--editeur=gedit` (exemple pour `gedit`)
-
+>
 > Si vous n'arrivez pas à obtenir un editeur correct, vous pouvez entrer votre configuration ici: `~/.local/share/SaisieMesAbs/configuration.txt`
 
 ### Exemple de configuration
@@ -84,6 +93,7 @@ SEC_ENTRE_ETAPES    = 70
 ```
 
 ## Utilisation
+
 La prise en main est triviale. Pour être plus rapide il faut naviguer avec la touche `TAB` 🚀.
 
 Vous pouvez lancer l'application avec différents paramètre de démarrage, n'hesitez pas à appeler l'application avec l'argument `-h` pour en savoir plus !
@@ -93,6 +103,3 @@ Vous pouvez lancer l'application avec différents paramètre de démarrage, n'he
 Made in **KER72@TAAF** 🇹🇫
 
 By **Arthur Perrin** 🐧
-
-### TODO
-[ ] Arg pour choisir editeur (--force-nano ?)
