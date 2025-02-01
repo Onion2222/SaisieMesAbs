@@ -376,7 +376,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         except (FileNotFoundError, PermissionError) as exc:
             log.critical(
                 "❌ - Erreur lors de l'enregistrement de %s: %s",
-                file, exc
+                saveFile, exc
             )
             # Tentative de sauvegarde dans le répertoire courant
             log.critical(
