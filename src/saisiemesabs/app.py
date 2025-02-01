@@ -430,7 +430,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         """
         return pathlib.Path(
             self.configuration["Chemin_Sauvegarde"]
-            .replace("%$YY", self.date.text()[6:8])
+            .replace("$YY", self.date.text()[6:8])
             .replace("$STATION", self.station.text().lower())
         )
 
