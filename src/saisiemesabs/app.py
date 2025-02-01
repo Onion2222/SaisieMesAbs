@@ -16,7 +16,7 @@ import subprocess
 from shutil import which
 
 from PySide6 import QtWidgets, QtCore
-from PySide6.QtGui import QIcon, Qt, QAction, QShortcut
+from PySide6.QtGui import QIcon, Qt, QAction, QShortcut, QFont
 
 from .resources import ressources_rc
 from .customwidgets import (
@@ -376,18 +376,18 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             log.info("✅ - Mesure sauvegardée sous %s", saveFile)
         except (FileNotFoundError, PermissionError) as exc:
             log.critical(
-                "❌ - Erreur lors de l'enregistrement de %s: %s",
+                "Erreur lors de l'enregistrement de %s: %s",
                 saveFile, exc
             )
             # Tentative de sauvegarde dans le répertoire courant
             log.critical(
-                "❗ - Ecriture des données dans le repertoire courant ./%s",
+                "Ecriture des données dans le repertoire courant ./%s",
                 saveFilename
             )
             saveFile = pathlib.Path(f"./{saveFilename}")
             with open(saveFile, "w", encoding='utf-8') as file:
                 file.write(saveMesure)
-            log.warning("✅ - Mesure sauvegardée sous %s", saveFile)
+            log.warning("Mesure sauvegardée sous %s", saveFile)
         # Ferme l'application après l'enregistrement
         self.close()
 
@@ -510,7 +510,7 @@ def analyse_conf(chemin_fichier: pathlib.Path) -> dict:
         return configuration
 
     except (ValueError, configparser.MissingSectionHeaderError, configparser.NoOptionError) as exc:
-        log.error("❌ - Le fichier de configuration %s n'est pas valide. "
+        log.error("Le fichier de configuration %s n'est pas valide. "
                   "Erreur: %s", chemin_fichier, exc)
         raise ValueError(f"Le fichier de configuration '{chemin_fichier}' "
                          "n'est pas valide") from exc
@@ -632,15 +632,21 @@ class PopUpLogger(logging.Handler, QtWidgets.QDialog):
         self.setLevel(logging.WARNING)
         self.show_error = QtCore.Signal()
         self.setWindowTitle("LOGGER")
-        self.message = QtWidgets.QLabel("---")
-        self.message.setMaximumWidth(1000)
-        self.message.setMinimumWidth(200)
+        self.header = QtWidgets.QLabel("Un evenement vient de se produire")
+        self.message = QtWidgets.QTextEdit()
+        self.message.setMinimumWidth(600)
+        self.message.setMaximumHeight(80)
         #self.message.setWordWrap(True)
-        self.message.setAlignment(QtCore.Qt.AlignCenter)
+        #self.message.setAlignment(QtCore.Qt.AlignCenter)
+        self.message.setFrameStyle(1)
+        self.message.setFont(QFont('Monospace',10))
+        #self.message.setReadOnly(True)
         self.button = QtWidgets.QPushButton("OK")
+        self.button.setFixedWidth(80)
         layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.header)
         layout.addWidget(self.message)
-        layout.addWidget(self.button)
+        layout.addWidget(self.button, alignment=QtCore.Qt.AlignRight)
         self.button.clicked.connect(lambda : QtWidgets.QDialog.close(self))
 
     def emit(self, record: logging.LogRecord):
@@ -648,13 +654,8 @@ class PopUpLogger(logging.Handler, QtWidgets.QDialog):
         msg = msg.replace(":", ":\n")
         self.message.setText(msg)
         #print(f"#{type(record)}#{record}")
-        if record.levelno == (logging.WARNING):
-            self.setWindowTitle("ATTENTION")
-        elif record.levelno == logging.ERROR:
-            self.setWindowTitle("ERREUR")
-        #    self.errorMsg.setText(str(record.msg))
-        #    print("bbboooo")
-        #    self.error.emit()
+        self.setWindowTitle("Attention")
+        self.button.setFocus()
         self.exec()
         self.activateWindow()
 
@@ -750,7 +751,7 @@ def main() -> None:
     if args.editor:
         pathEditor = which(args.editor)
         if not pathEditor:
-            log.warning("❌ - L'éditeur %s n'existe pas !", args.editor)
+            log.warning("L'éditeur %s n'existe pas !", args.editor)
             sys.exit(1)
         log.info("🖋️  - Éditeur %s sélectionné", pathEditor)
 
