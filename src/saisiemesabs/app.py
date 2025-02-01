@@ -39,13 +39,35 @@ log.addHandler(log_stream_handler)
 
 DEBUG = False
 
+DEFAULT_CONF = (
+    "[STATION]\n\n"
+    "# Nom de la station en minuscule\n"
+    "NOM_STATION     = NA\n\n"
+    "#PATH du chemin où enregistrer les mesures\n"
+    "# - $YY sera remplacé par les deux derniers chiffres de l'année de la mesure\n"
+    "# - $STATION par le nom de la station en minuscule\n"
+    "PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour\n\n"
+    "# Azimuth de la cible\n"
+    "AZIMUTH_REPERE  = 52.35840\n\n"
+    "[AUTOCOMPLETE]\n"
+    "AUTO_INC_ANGLE      = 123.----\n"
+    "AUTO_DEC_ANGLE      = 233.----\n"
+    "AUTO_CAL_ANGLE_HAUT = 247.75--\n"
+    "AUTO_CAL_ANGLE_BAS  = 47.75--\n"
+    "SEC_ENTRE_MESURES   = 45\n"
+    "SEC_ENTRE_ETAPES    = 70\n\n\n"
+    "# N'oubliez pas de relancer l'application !\n"
+)
+
+
 class SaisieMesAbs(QtWidgets.QMainWindow):
     """ Fenêtre principale
     """
+
     def __init__(self, date: str,
                  metadata: dict,
                  configuration: dict,
-                 pathEditor:str=None) -> None:
+                 pathEditor: str = None) -> None:
         super().__init__()
         # Récupération de la date de la mesure
         self.initdate = date
@@ -137,7 +159,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # MaJ de l'angle haut de la visée 2
         self.vise1.angleVH.textChanged.connect(
             self.updateCalibration
-        ) 
+        )
         # Visée 2
         self.vise2 = CalibrationAzimuth(2, self.configuration["Calibration"])
         # GROUPE CONTEXTUEL
@@ -150,7 +172,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # Station
         self.layoutStation = QtWidgets.QFormLayout()
         self.indStation = QtWidgets.QLabel("Station")
-        self.station = QtWidgets.QLineEdit(self.configuration["Station"].upper())
+        self.station = QtWidgets.QLineEdit(
+            self.configuration["Station"].upper())
         self.station.setAlignment(Qt.AlignCenter)
         self.station.setFixedWidth(150)
         # Azimuth repère
@@ -167,8 +190,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # Définition des logos
         self.logoGroup = QtWidgets.QGroupBox("Programme IPEV-EOST n°139")
         self.logoGroup.setMaximumHeight(self.contexte.sizeHint().height())
-        logoEOST=Logo(":/Logo_EOST.png",self.layoutCon.sizeHint().height())
-        logoIPEV=Logo(":/Logo_IPEV.png",self.layoutCon.sizeHint().height())
+        logoEOST = Logo(":/Logo_EOST.png", self.layoutCon.sizeHint().height())
+        logoIPEV = Logo(":/Logo_IPEV.png", self.layoutCon.sizeHint().height())
         # Arrangement dans un layout
         self.layoutLogo = QtWidgets.QHBoxLayout()
         self.layoutLogo.addWidget(logoEOST)
@@ -245,7 +268,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         log.debug("Documentation")
         webbrowser.open(self.metadata["Home-page"])
 
-    def sendSOS(self) -> None :
+    def sendSOS(self) -> None:
         """ Ouvre une page pour ecrire un mail au dev
         """
         log.debug("SOS")
@@ -258,15 +281,15 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         """
         log.debug("editConf")
         if not self.editeur:
-            self.editeur='/usr/bin/xdg-open'
-        subprocess.Popen([self.editeur,self.configuration["Chemin_conf"]])
+            self.editeur = '/usr/bin/xdg-open'
+        subprocess.Popen([self.editeur, self.configuration["Chemin_conf"]])
 
     def modifAngleEtatChanged(self, btn: QtWidgets.QRadioButton) -> None:
         """ Fonction interpretée quand la case de modification des angles
             calculés est cochée
 
         Args:
-            btn (QtWidgets.QRadioButton): Case de modification des angles calculés
+            btn (QtWidgets.QRadioButton): Case de modification des angles
         """
         # Stopper l'autocompletion des 4 mesures
         for i in range(4):
@@ -338,7 +361,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
 
         # Génération de la sauvegarde
         saveMesure = (
-            f'{self.station.text().lower()} {self.date.text().replace("/", " ")}'
+            f'{self.station.text().lower()} '
+            f'{self.date.text().replace("/", " ")}'
             ' Methode des residus\n'
             f'visees balise\n'
             f' {self.angleAR.text()}\n'
@@ -346,7 +370,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             f'{self.vise2.getAzi()[0]} {self.vise2.getAzi()[1]}\n')
         for eMesure in self.mesure:
             saveMesure += (
-                f"{self.dicDataToString( eMesure.getData() )}\n"
+                f"{self.dicDataToString(eMesure.getData())}\n"
             )
         log.debug(saveMesure)
 
@@ -362,7 +386,8 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
                 saveFile
             )
             log.critical(
-                "❌ - Ecriture des données dans le repertoire courant ./%s car %s n'existe pas",
+                "❌ - Ecriture des données dans le repertoire courant ./%s "
+                "car %s n'existe pas",
                 saveFilename,
                 saveFile
             )
@@ -404,7 +429,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         return mesValide & self.vise1.validate() & self.vise2.validate()
 
     def generatePath(self) -> pathlib.Path:
-        """ Génère un dossier d'enregistrement correspondant 
+        """ Génère un dossier d'enregistrement correspondant
         à la mesure
 
         Returns:
@@ -429,6 +454,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             f"{self.station.text().lower()}"
         )
 
+
 def is_a_date(date) -> bool:
     """Renvoie True si la date jj/mm/aa est valide
 
@@ -440,16 +466,28 @@ def is_a_date(date) -> bool:
     """
     return date_re.match(date)
 
+
 def analyse_conf(chemin_fichier: pathlib.Path) -> dict:
+    """ Analyse de la configuration 
+
+    Args:
+        chemin_fichier (pathlib.Path): Chemin du fichier de configuration
+
+    Raises:
+        ValueError: La configuration est mauvaise
+
+    Returns:
+        dict: Renvoi les valeurs de configuration
+    """
     try:
         log.info("🔍 - Analyse du fichier %s", chemin_fichier)
         contentConfig = configparser.ConfigParser()
         contentConfig.read(chemin_fichier)
-        configuration:dict = {}
-        configuration["Chemin_conf"]=chemin_fichier
-        configuration["Station"]=contentConfig["STATION"]["NOM_STATION"]
-        configuration["Azimuth_Rep"]=contentConfig["STATION"]["AZIMUTH_REPERE"]
-        configuration["Chemin_Sauvegarde"]=contentConfig["STATION"]["PATH_RE"]
+        configuration: dict = {}
+        configuration["Chemin_conf"] = chemin_fichier
+        configuration["Station"] = contentConfig["STATION"]["NOM_STATION"]
+        configuration["Azimuth_Rep"] = contentConfig["STATION"]["AZIMUTH_REPERE"]
+        configuration["Chemin_Sauvegarde"] = contentConfig["STATION"]["PATH_RE"]
         configuration['Angle'] = {
             "inc": contentConfig["AUTOCOMPLETE"]["AUTO_INC_ANGLE"],
             "dec": contentConfig["AUTOCOMPLETE"]["AUTO_DEC_ANGLE"]
@@ -458,18 +496,30 @@ def analyse_conf(chemin_fichier: pathlib.Path) -> dict:
             "haut": contentConfig["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_HAUT"],
             "bas": contentConfig["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_BAS"]
         }
-        configuration['Delai']={
-            "Etape" : int(contentConfig["AUTOCOMPLETE"]["SEC_ENTRE_MESURES"]),
-            "Mesure" : int(contentConfig["AUTOCOMPLETE"]["SEC_ENTRE_ETAPES"])
+        configuration['Delai'] = {
+            "Etape": int(contentConfig["AUTOCOMPLETE"]["SEC_ENTRE_MESURES"]),
+            "Mesure": int(contentConfig["AUTOCOMPLETE"]["SEC_ENTRE_ETAPES"])
         }
         return configuration
     except (ValueError, configparser.MissingSectionHeaderError) as exc:
         log.error("❌ - Le fichier de configuration %s n'est pas valide",
-                     chemin_fichier, exc_info=exc)
-        raise ValueError("Le fichier de configuration n'est pas valide") from exc
+                  chemin_fichier, exc_info=exc)
+        raise ValueError(
+            "Le fichier de configuration n'est pas valide") from exc
 
-def get_dataDir(app_name) -> pathlib.Path:
-    """
+
+def get_dataDir(app_name: str) -> pathlib.Path:
+    """ Renvoi le dossier où stocker la configuration
+        Le créé s'il n'existe pas
+
+    Args:
+        app_name (str): Nom de l'application
+
+    Raises:
+        SystemError: L'OS n'est pas compatible
+
+    Returns:
+        pathlib.Path: Dossier où stocker la configuration
     """
 
     home = pathlib.Path.home()
@@ -492,13 +542,14 @@ def get_dataDir(app_name) -> pathlib.Path:
 
 def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
     """ Obtenir le chemin du fichier de configuration
-        Si l'application n'a pas de fichier de configuration par défaut, en créer un
+        Si l'application n'a pas de fichier de conf par défaut, en créer un
         Si un chemin est donné, verifier sa validité
         Sinon utiliser le chemin par défaut de l'application
 
     Args:
         app_name (str): Nom de l'application
-        conf_path (pathlib.Path, optional): Chemin vers le fichier conf. Defaults to None.
+        conf_path (pathlib.Path, optional): Chemin vers le fichier conf.
+                                            Defaults to None.
 
     Returns:
         pathlib.Path: Le chemin du fichier de configuration
@@ -507,28 +558,12 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
         log.debug("Pas de conf donné")
         conf_path = get_dataDir(app_name) / "configuration.txt"
         if not conf_path.is_file():
-            log.warning("Le fichier de configuration %s n'existe pas -> création", conf_path)
+            log.warning(
+                "Le fichier de configuration %s n'existe pas -> création",
+                conf_path)
             # Création du fichier conf
             with open(conf_path, "w", encoding='utf-8') as conf_file:
-                conf_file.write(
-                    "[STATION]\n\n"
-                    "# Nom de la station en minuscule\n"
-                    "NOM_STATION     = NA\n\n"
-                    "#PATH du chemin où enregistrer les mesures\n"
-                    "# - $YY sera remplacé par les deux derniers chiffres de l'année de la mesure\n"
-                    "# - $STATION par le nom de la station en minuscule\n"
-                    "PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour\n\n"
-                    "# Azimuth de la cible\n"
-                    "AZIMUTH_REPERE  = 52.35840\n\n"
-                    "[AUTOCOMPLETE]\n"
-                    "AUTO_INC_ANGLE      = 123.----\n"
-                    "AUTO_DEC_ANGLE      = 233.----\n"
-                    "AUTO_CAL_ANGLE_HAUT = 247.75--\n"
-                    "AUTO_CAL_ANGLE_BAS  = 47.75--\n"
-                    "SEC_ENTRE_MESURES   = 45\n"
-                    "SEC_ENTRE_ETAPES    = 70\n\n\n"
-                    "# N'oubliez pas de relancer l'application !\n"
-                )
+                conf_file.write(DEFAULT_CONF)
         try:
             return analyse_conf(conf_path)
         except (KeyError, ValueError):
@@ -536,7 +571,7 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
                          "défaut soit incompatible ou corrompue.")
             log.warning("Création d'une nouvelle config")
             with open(conf_path, "w", encoding='utf-8') as conf_file:
-                conf_file.write(create_conf())
+                conf_file.write(DEFAULT_CONF)
             return analyse_conf(conf_path)
 
     # Verifier que le fichier fonctionne
@@ -550,7 +585,6 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
     except (ValueError, KeyError):
         log.warning("Utilisation du fichier conf par défaut")
         return get_conf(app_name, None)
-
 
 
 def main() -> None:
@@ -576,7 +610,8 @@ def main() -> None:
     # Verbosité
     parser.add_argument('-v', "--verbosity",
                         type=int, default=1, required=False,
-                        help="Verbosité [0:CRITICAL,1:INFO,2:DEBUG] (defaut: 1)")
+                        help="Verbosité [0:CRITICAL,1:INFO,2:DEBUG] "
+                        "(defaut:1)")
     # Debug
     parser.add_argument('--debug',
                         action='store_true',
@@ -584,7 +619,8 @@ def main() -> None:
     # Debug
     parser.add_argument('--editor',
                         type=str,
-                        help="Permet de choisir son editor gui (gedit, gvim, etc...)")
+                        help="Permet de choisir son editor gui "
+                        "(gedit, gvim, etc...)")
 
     args = parser.parse_args()
 
@@ -592,7 +628,7 @@ def main() -> None:
     if args.debug:
         global DEBUG
         DEBUG = True
-        args.verbosite=1000
+        args.verbosite = 1000
 
     # Réglage de la verbosité
     if args.verbosity <= 0:
@@ -601,24 +637,25 @@ def main() -> None:
         log.setLevel(logging.INFO)
     elif args.verbosity > 1:
         log.setLevel(logging.DEBUG)
-        
 
+    log.info("🧑 - Programme par \033[35m%s\033[0m",
+             metadata["author"])
+    log.info("📬 - Merci de reporter tous bugs à l'adresse mail suivante:"
+             "\033[31mmailto:%s\033[0m", metadata["Author-email"])
+    log.info("🌍 - Ou sur le repo suivant: \033[31m%s\033[0m",
+             metadata["Home-page"])
+    log.info("👁️  - Niveau de verbosité: %s",
+             logging.getLevelName(log.level))
 
+    log.debug("Arguments: %s", args)
+    log.debug("Mode: DEBUG=%s", DEBUG)
+    log.debug("Metadate: %s", metadata)
 
-    log.info("🧑 - Programme par \033[35m%s\033[0m",metadata["author"])
-    log.info("📬 - Merci de reporter tous bugs à l'adresse mail suivante: \033[31mmailto:%s\033[0m",metadata["Author-email"])
-    log.info("🌍 - Ou sur le repo suivant: \033[31m%s\033[0m",metadata["Home-page"])
-    log.info("👁️  - Niveau de verbosité: %s", logging.getLevelName(log.level))
-    
-    log.debug("Arguments: %s",args)
-    log.debug("Mode: DEBUG=%s",DEBUG)
-    log.debug("Metadate: %s",metadata)
-    
     # Recupération du fichier de configuration
     if args.conf:
         conf = get_conf(metadata["Formal-Name"], args.conf)
     else:
-        conf = get_conf(metadata["Formal-Name"],None)
+        conf = get_conf(metadata["Formal-Name"], None)
 
     log.info("🎛️  - Configuration: %s", conf['Chemin_conf'])
 
@@ -637,7 +674,6 @@ def main() -> None:
             log.warning("❌ - L'editeur %s n'existe pas !", args.editor)
             sys.exit(1)
         log.info("🖋️  - Editeur %s selectionné", pathEditor)
-            
 
     QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
 
