@@ -74,7 +74,6 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         log.debug("Fin initialisation UI")
         self.show()
 
-
     def initUi(self) -> None:
         """initialisation de la fenêtre principale
         """
@@ -245,6 +244,10 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.actionSos = QAction(self)
         self.actionSos.setText("Mail aux devs")
         self.actionSos.triggered.connect(self.sendSOS)
+        # - Aide - Information
+        self.actionSos = QAction(self)
+        self.actionSos.setText("Informations")
+        self.actionSos.triggered.connect(self.openInformation)
         # - Aide | Lien
         aide.addAction(self.actionHelp)
         aide.addAction(self.actionSos)
@@ -266,6 +269,9 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         """
         log.debug("SOS")
         webbrowser.open(f"mailto:{self.metadata['Author-email']}")
+        
+    def openInformation(self) -> None:
+        PopUpCredit()
 
     def editConf(self) -> None:
         """ Permet d'éditer la configuration
@@ -636,7 +642,6 @@ class PopUpLogger(logging.Handler, QtWidgets.QDialog):
         logging.Handler.__init__(self)
         QtWidgets.QDialog.__init__(self)
         self.setLevel(logging.WARNING)
-        self.show_error = QtCore.Signal()
         self.setWindowTitle("LOGGER")
         self.header = QtWidgets.QLabel("Un evenement vient de se produire")
         self.message = QtWidgets.QTextEdit()
@@ -661,6 +666,44 @@ class PopUpLogger(logging.Handler, QtWidgets.QDialog):
         self.message.setText(msg)
         #print(f"#{type(record)}#{record}")
         self.setWindowTitle("Attention")
+        self.button.setFocus()
+        self.exec()
+        self.activateWindow()
+        
+class PopUpCredit(QtWidgets.QDialog):
+
+    def __init__(self):
+        QtWidgets.QDialog.__init__(self)
+        self.setWindowTitle("Informations")
+        self.message = QtWidgets.QLabel(
+            "Créé par Arthur Perrin\n"
+            "Lors de la mission KER72\n\n"
+            "Merci de reporter tous bugs à l'adresse mail suivante:"
+        )
+        self.message2 = QtWidgets.QLabel(
+            "<a href='mailto:arthur.perrin01@protonmail.com'>arthur.perrin01@protonmail.com</a>"
+        )
+        self.message3 = QtWidgets.QLabel("N'hesitez pas à contribuer au developpement sur:")
+        self.message4 = QtWidgets.QLabel(
+            "<a href='https://github.com/Onion2222/SaisieMesAbs'>GitHub</a>"
+        )
+
+        self.message2.setOpenExternalLinks(True)
+        self.message4.setOpenExternalLinks(True)
+        self.message.setAlignment(QtCore.Qt.AlignCenter)
+        self.message2.setAlignment(QtCore.Qt.AlignCenter)
+        self.message3.setAlignment(QtCore.Qt.AlignCenter)
+        self.message4.setAlignment(QtCore.Qt.AlignCenter)
+        self.message.setMinimumWidth(400)
+        self.button = QtWidgets.QPushButton("OK")
+        self.button.setFixedWidth(80)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.message)
+        layout.addWidget(self.message2)
+        layout.addWidget(self.message3)
+        layout.addWidget(self.message4)
+        layout.addWidget(self.button, alignment=QtCore.Qt.AlignRight)
+        self.button.clicked.connect(lambda : QtWidgets.QDialog.close(self))
         self.button.setFocus()
         self.exec()
         self.activateWindow()
