@@ -386,7 +386,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             saveFile = pathlib.Path(f"./{saveFilename}")
             with open(saveFile, "w", encoding='utf-8') as file:
                 file.write(saveMesure)
-            log.info("✅ - Mesure sauvegardée sous %s", saveFile)
+            log.warning("✅ - Mesure sauvegardée sous %s", saveFile)
         # Ferme l'application après l'enregistrement
         self.close()
 
@@ -630,27 +630,31 @@ class PopUpLogger(logging.Handler, QtWidgets.QDialog):
         QtWidgets.QDialog.__init__(self)
         self.setLevel(logging.WARNING)
         self.show_error = QtCore.Signal()
-        self.setWindowTitle("TEST")
-        self.edit = QtWidgets.QLabel("---")
+        self.setWindowTitle("LOGGER")
+        self.message = QtWidgets.QLabel("---")
+        self.message.setMaximumWidth(600)
+        self.message.setMinimumWidth(400)
+        self.message.setWordWrap(True)
         self.button = QtWidgets.QPushButton("OK")
         layout = QtWidgets.QVBoxLayout(self)
-        layout.addWidget(self.edit)
+        layout.addWidget(self.message)
         layout.addWidget(self.button)
         self.button.clicked.connect(lambda : QtWidgets.QDialog.close(self))
 
     def emit(self, record: logging.LogRecord):
         print(record)
-        self.edit.setText(record.msg)
-        self.exec()
+        msg = self.format(record)
+        msg = msg.replace(":", ":\n")
+        self.message.setText(msg)
         #print(f"#{type(record)}#{record}")
-        #if record.levelno == (logging.WARNING):
-        #    self.warningMsg.setText(str(record.msg))
-        #    print("bbb")
-        #    self.warning.emit()
-        #elif record.levelno == logging.ERROR:
+        if record.levelno == (logging.WARNING):
+            self.setWindowTitle("ATTENTION")
+        elif record.levelno == logging.ERROR:
+            self.setWindowTitle("ERREUR")
         #    self.errorMsg.setText(str(record.msg))
         #    print("bbboooo")
         #    self.error.emit()
+        self.exec()
 
 
 
