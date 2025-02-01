@@ -41,14 +41,17 @@ log_stream_handler.setFormatter(
 )
 # Ajout du handler au logger
 log.addHandler(log_stream_handler)
+
+
 # Ajout d'un gestionnaire des erreurs innatendues
 def exc_handler(exctype, value, tb):
     log.exception(''.join(traceback.format_exception(exctype, value, tb)))
+
+
 sys.excepthook = exc_handler
 
 # Variable globale de débogage, initialisée à False
 DEBUG = False
-
 
 
 class SaisieMesAbs(QtWidgets.QMainWindow):
@@ -269,7 +272,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         """
         log.debug("SOS")
         webbrowser.open(f"mailto:{self.metadata['Author-email']}")
-        
+
     def openInformation(self) -> None:
         PopUpCredit()
 
@@ -647,31 +650,27 @@ class PopUpLogger(logging.Handler, QtWidgets.QDialog):
         self.message = QtWidgets.QTextEdit()
         self.message.setMinimumWidth(600)
         self.message.setMaximumHeight(80)
-        #self.message.setWordWrap(True)
-        #self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.message.setFrameStyle(1)
-        self.message.setFont(QFont('Monospace',10))
-        #self.message.setReadOnly(True)
+        self.message.setFont(QFont('Monospace', 10))
         self.button = QtWidgets.QPushButton("OK")
         self.button.setFixedWidth(80)
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.header)
         layout.addWidget(self.message)
         layout.addWidget(self.button, alignment=QtCore.Qt.AlignRight)
-        self.button.clicked.connect(lambda : QtWidgets.QDialog.close(self))
+        self.button.clicked.connect(lambda: QtWidgets.QDialog.close(self))
 
     def emit(self, record: logging.LogRecord):
         msg = self.format(record)
         msg = msg.replace(":", ":\n")
         self.message.setText(msg)
-        #print(f"#{type(record)}#{record}")
         self.setWindowTitle("Attention")
         self.button.setFocus()
         self.exec()
         self.activateWindow()
-        
-class PopUpCredit(QtWidgets.QDialog):
 
+
+class PopUpCredit(QtWidgets.QDialog):
     def __init__(self):
         QtWidgets.QDialog.__init__(self)
         self.setWindowTitle("Informations")
@@ -703,11 +702,10 @@ class PopUpCredit(QtWidgets.QDialog):
         layout.addWidget(self.message3)
         layout.addWidget(self.message4)
         layout.addWidget(self.button, alignment=QtCore.Qt.AlignRight)
-        self.button.clicked.connect(lambda : QtWidgets.QDialog.close(self))
+        self.button.clicked.connect(lambda: QtWidgets.QDialog.close(self))
         self.button.setFocus()
         self.exec()
         self.activateWindow()
-
 
 
 def main() -> None:
@@ -718,12 +716,12 @@ def main() -> None:
 
     # Récupérer les métadonnées de l'application
     metadata = importlib.metadata.metadata(app_module)
-    
+
     QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
 
     app = QtWidgets.QApplication(sys.argv)
     log.debug("Démarrage de l'application")
-    
+
     # Création d'une fenetre POPUP pour afficher les erreurs
     popupLog = PopUpLogger()
     log.addHandler(popupLog)
