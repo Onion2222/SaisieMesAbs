@@ -632,9 +632,10 @@ class PopUpLogger(logging.Handler, QtWidgets.QDialog):
         self.show_error = QtCore.Signal()
         self.setWindowTitle("LOGGER")
         self.message = QtWidgets.QLabel("---")
-        self.message.setMaximumWidth(600)
-        self.message.setMinimumWidth(400)
-        self.message.setWordWrap(True)
+        self.message.setMaximumWidth(1000)
+        self.message.setMinimumWidth(200)
+        #self.message.setWordWrap(True)
+        self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.button = QtWidgets.QPushButton("OK")
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.message)
@@ -642,7 +643,6 @@ class PopUpLogger(logging.Handler, QtWidgets.QDialog):
         self.button.clicked.connect(lambda : QtWidgets.QDialog.close(self))
 
     def emit(self, record: logging.LogRecord):
-        print(record)
         msg = self.format(record)
         msg = msg.replace(":", ":\n")
         self.message.setText(msg)
@@ -655,6 +655,7 @@ class PopUpLogger(logging.Handler, QtWidgets.QDialog):
         #    print("bbboooo")
         #    self.error.emit()
         self.exec()
+        self.activateWindow()
 
 
 
