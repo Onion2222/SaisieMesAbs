@@ -341,7 +341,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             f'{self.vise2.getAzi()[0]} {self.vise2.getAzi()[1]}\n'
         )
         for eMesure in self.mesure:
-            saveMesure += (f"{self.dicDataToString(eMesure.getData())}\n")
+            tempSave += (f"{self.dicDataToString(eMesure.getData())}\n")
         return tempSave
 
     def enregistrer(self) -> None:
