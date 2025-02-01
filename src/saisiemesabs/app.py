@@ -15,7 +15,7 @@ import webbrowser
 import subprocess
 from shutil import which
 
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import QIcon, Qt, QAction
 
 from .resources import ressources_rc
@@ -67,6 +67,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.initUi()
         log.debug("Fin initialisation UI")
         self.show()
+
 
     def initUi(self) -> None:
         """initialisation de la fenêtre principale
@@ -622,6 +623,37 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
         return get_conf(app_name, None)
 
 
+class PopUpLogger(logging.Handler, QtWidgets.QDialog):
+
+    def __init__(self):
+        logging.Handler.__init__(self)
+        QtWidgets.QDialog.__init__(self)
+        self.setLevel(logging.WARNING)
+        self.show_error = QtCore.Signal()
+        self.setWindowTitle("TEST")
+        self.edit = QtWidgets.QLabel("---")
+        self.button = QtWidgets.QPushButton("OK")
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.edit)
+        layout.addWidget(self.button)
+        self.button.clicked.connect(lambda : QtWidgets.QDialog.close(self))
+
+    def emit(self, record: logging.LogRecord):
+        print(record)
+        self.edit.setText(record.msg)
+        self.exec()
+        #print(f"#{type(record)}#{record}")
+        #if record.levelno == (logging.WARNING):
+        #    self.warningMsg.setText(str(record.msg))
+        #    print("bbb")
+        #    self.warning.emit()
+        #elif record.levelno == logging.ERROR:
+        #    self.errorMsg.setText(str(record.msg))
+        #    print("bbboooo")
+        #    self.error.emit()
+
+
+
 def main() -> None:
     """Fonction principale du programme."""
 
@@ -630,6 +662,15 @@ def main() -> None:
 
     # Récupérer les métadonnées de l'application
     metadata = importlib.metadata.metadata(app_module)
+    
+    QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
+
+    app = QtWidgets.QApplication(sys.argv)
+    log.debug("Démarrage de l'application")
+    
+    # Création d'une fenetre POPUP pour afficher les erreurs
+    popupLog = PopUpLogger()
+    log.addHandler(popupLog)
 
     # Parser les arguments CLI
     parser = argparse.ArgumentParser()
@@ -707,9 +748,6 @@ def main() -> None:
             sys.exit(1)
         log.info("🖋️  - Éditeur %s sélectionné", pathEditor)
 
-    QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
 
-    app = QtWidgets.QApplication(sys.argv)
-    log.debug("Démarrage de l'application")
     main_window = SaisieMesAbs(dateMes, metadata, conf, pathEditor)
     sys.exit(app.exec())
