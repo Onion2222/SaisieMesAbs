@@ -30,34 +30,19 @@ from .customwidgets import (
 
 # Définition du logger
 log = logging.getLogger(__name__)
+# Niveau de log par défaut (DEBUG pour tout afficher)
 log.setLevel(logging.DEBUG)
+# Création d'un handler pour afficher les logs sur la sortie standard (stdout)
 log_stream_handler = logging.StreamHandler(sys.stdout)
+# Définition du format de sortie pour les logs
 log_stream_handler.setFormatter(
     logging.Formatter("%(asctime)s [%(levelname)8s] %(lineno)4d : %(message)s")
 )
+# Ajout du handler au logger
 log.addHandler(log_stream_handler)
 
+# Variable globale de débogage, initialisée à False
 DEBUG = False
-
-DEFAULT_CONF = (
-    "[STATION]\n\n"
-    "# Nom de la station en minuscule\n"
-    "NOM_STATION     = NA\n\n"
-    "#PATH du chemin où enregistrer les mesures\n"
-    "# - $YY sera remplacé par les deux derniers chiffres de l'année de la mesure\n"
-    "# - $STATION par le nom de la station en minuscule\n"
-    "PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour\n\n"
-    "# Azimuth de la cible\n"
-    "AZIMUTH_REPERE  = 52.35840\n\n"
-    "[AUTOCOMPLETE]\n"
-    "AUTO_INC_ANGLE      = 123.----\n"
-    "AUTO_DEC_ANGLE      = 233.----\n"
-    "AUTO_CAL_ANGLE_HAUT = 247.75--\n"
-    "AUTO_CAL_ANGLE_BAS  = 47.75--\n"
-    "SEC_ENTRE_MESURES   = 45\n"
-    "SEC_ENTRE_ETAPES    = 70\n\n\n"
-    "# N'oubliez pas de relancer l'application !\n"
-)
 
 
 class SaisieMesAbs(QtWidgets.QMainWindow):
@@ -339,61 +324,69 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         if self.vise2.updatable and self.vise1.angleVH.isValid(False):
             self.vise2.angleVH.setText(self.vise1.angleVH.text())
 
-    def enregistrer(self) -> None:
-        """ Enregistre les données dans un fichier re et quitte l'application
-        """
-        # Ces deux lignes permettent de forcer un rewrite()
-        # sur les QtWidgets.QLineEdit et ainsi reformater les nombres
-        self.setFocus()
-        self.update()
-        # Valide la saisie avant enregistrement
-        if not self.validateAll():
-            # si mesure pas valide, beep
-            QtWidgets.QApplication.beep()
-            log.warning("La mesure n'est pas valide")
-            # Si pas DEBUG, ne rien faire (la mesure n'est pas valide)
-            if not DEBUG:
-                return
-            # Si debug, avertir et passer à l'enregistrement
-            log.debug(
-                "La mesure n'est pas valide, mais DEBUG=True"
-            )
+    def formatSaveData(self) -> str:
+        """ Génère une sauvegarde des mesures au fromat re
 
-        # Génération de la sauvegarde
-        saveMesure = (
+        Returns:
+            str: Sauvegarde formattée
+        """
+        tempSave = (
             f'{self.station.text().lower()} '
             f'{self.date.text().replace("/", " ")}'
             ' Methode des residus\n'
             f'visees balise\n'
             f' {self.angleAR.text()}\n'
             f'{self.vise1.getAzi()[0]} {self.vise1.getAzi()[1]}\n'
-            f'{self.vise2.getAzi()[0]} {self.vise2.getAzi()[1]}\n')
+            f'{self.vise2.getAzi()[0]} {self.vise2.getAzi()[1]}\n'
+        )
         for eMesure in self.mesure:
-            saveMesure += (
-                f"{self.dicDataToString(eMesure.getData())}\n"
-            )
+            saveMesure += (f"{self.dicDataToString(eMesure.getData())}\n")
+        return tempSave
+
+    def enregistrer(self) -> None:
+        """ Enregistre les données dans un fichier re et quitte l'application
+        """
+        # Force un reflow des widgets pour garantir un bon affichage
+        self.setFocus()
+        self.update()
+        # Valide la saisie avant enregistrement
+        if not self.validateAll():
+            # Si mesure pas valide, beep
+            # Ne fonctionne pas sur toutes les plateformes
+            QtWidgets.QApplication.beep()
+            log.warning("La mesure n'est pas valide")
+            # Si pas DEBUG, ne rien faire (la mesure n'est pas valide)
+            if not DEBUG:
+                return
+            # Si debug, avertir et passer à l'enregistrement
+            log.debug("Mesure invalide, mais DEBUG activé")
+
+        # Génération de la sauvegarde
+        saveMesure = self.formatSaveData()
         log.debug(saveMesure)
 
-        # Enregistrement dans un fichier
+        # Sauvegarde dans le fichier
         saveFilename = self.generateFileName()
         saveFile = self.generatePath() / saveFilename
         try:
-            with open(saveFile, "w", encoding='utf-8') as saveFile:
-                saveFile.write(saveMesure)
-        except FileNotFoundError:
+            with open(saveFile, "w", encoding='utf-8') as file:
+                file.write(saveMesure)
+            log.info("✅ - Mesure sauvegardée sous %s", saveFile)
+        except (FileNotFoundError, PermissionError) as exc:
             log.critical(
-                "❌ - Erreur, le chemin configuré n'existe pas ! (%s)",
-                saveFile
+                "❌ - Erreur lors de l'enregistrement de %s: %s",
+                file, exc
             )
+            # Tentative de sauvegarde dans le répertoire courant
             log.critical(
-                "❌ - Ecriture des données dans le repertoire courant ./%s "
-                "car %s n'existe pas",
-                saveFilename,
-                saveFile
+                "❗ - Ecriture des données dans le repertoire courant ./%s",
+                saveFilename
             )
-            with open(saveFilename, "w", encoding='utf-8') as saveFile:
-                saveFile.write(saveMesure)
-        # Quitter la fenêtre
+            saveFile = pathlib.Path(f"./{saveFilename}")
+            with open(saveFile, "w", encoding='utf-8') as file:
+                file.write(saveMesure)
+            log.info("✅ - Mesure sauvegardée sous %s", saveFile)
+        # Ferme l'application après l'enregistrement
         self.close()
 
     def dicDataToString(self, dicData: dict) -> str:
@@ -424,8 +417,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
             bool: True si ensemble données valide, False sinon
         """
         mesValide = self.angleAR.isValid()
-        for eMesure in self.mesure:
-            mesValide &= eMesure.validate()
+        mesValide = all(eMesure.validate() for eMesure in self.mesure)
         return mesValide & self.vise1.validate() & self.vise2.validate()
 
     def generatePath(self) -> pathlib.Path:
@@ -468,7 +460,7 @@ def is_a_date(date) -> bool:
 
 
 def analyse_conf(chemin_fichier: pathlib.Path) -> dict:
-    """ Analyse de la configuration 
+    """ Analyse de la configuration
 
     Args:
         chemin_fichier (pathlib.Path): Chemin du fichier de configuration
@@ -481,31 +473,45 @@ def analyse_conf(chemin_fichier: pathlib.Path) -> dict:
     """
     try:
         log.info("🔍 - Analyse du fichier %s", chemin_fichier)
+
+        # Initialisation du parser de configuration
         contentConfig = configparser.ConfigParser()
         contentConfig.read(chemin_fichier)
-        configuration: dict = {}
-        configuration["Chemin_conf"] = chemin_fichier
-        configuration["Station"] = contentConfig["STATION"]["NOM_STATION"]
-        configuration["Azimuth_Rep"] = contentConfig["STATION"]["AZIMUTH_REPERE"]
-        configuration["Chemin_Sauvegarde"] = contentConfig["STATION"]["PATH_RE"]
-        configuration['Angle'] = {
-            "inc": contentConfig["AUTOCOMPLETE"]["AUTO_INC_ANGLE"],
-            "dec": contentConfig["AUTOCOMPLETE"]["AUTO_DEC_ANGLE"]
+
+        # Vérification si la section "STATION" et "AUTOCOMPLETE" sont présentes
+        if not contentConfig.has_section("STATION"):
+            raise ValueError("La section 'STATION' est manquante dans le fichier de configuration")
+        if not contentConfig.has_section("AUTOCOMPLETE"):
+            raise ValueError("La section 'AUTOCOMPLETE' est manquante dans le fichier de configuration")
+
+        # Extraction des valeurs de configuration
+        configuration = {
+            "Chemin_conf": chemin_fichier,
+            "Station": contentConfig.get("STATION", "NOM_STATION", fallback="NA"),  # Valeur par défaut si manquante
+            "Azimuth_Rep": contentConfig.get("STATION", "AZIMUTH_REPERE", fallback="---.----"),
+            "Chemin_Sauvegarde": contentConfig.get("STATION", "PATH_RE", fallback="./"),
+            'Angle': {
+                "inc": contentConfig.get("AUTOCOMPLETE", "AUTO_INC_ANGLE", fallback="---.----"),
+                "dec": contentConfig.get("AUTOCOMPLETE", "AUTO_DEC_ANGLE", fallback="---.----")
+            },
+            'Calibration': {
+                "haut": contentConfig.get("AUTOCOMPLETE", "AUTO_CAL_ANGLE_HAUT", fallback="---.----"),
+                "bas": contentConfig.get("AUTOCOMPLETE", "AUTO_CAL_ANGLE_BAS", fallback="---.----")
+            },
+            'Delai': {
+                "Etape": contentConfig.getint("AUTOCOMPLETE", "SEC_ENTRE_MESURES", fallback=45),
+                "Mesure": contentConfig.getint("AUTOCOMPLETE", "SEC_ENTRE_ETAPES", fallback=70)
+            }
         }
-        configuration['Calibration'] = {
-            "haut": contentConfig["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_HAUT"],
-            "bas": contentConfig["AUTOCOMPLETE"]["AUTO_CAL_ANGLE_BAS"]
-        }
-        configuration['Delai'] = {
-            "Etape": int(contentConfig["AUTOCOMPLETE"]["SEC_ENTRE_MESURES"]),
-            "Mesure": int(contentConfig["AUTOCOMPLETE"]["SEC_ENTRE_ETAPES"])
-        }
+
+        # Retourner la configuration sous forme de dictionnaire
         return configuration
-    except (ValueError, configparser.MissingSectionHeaderError) as exc:
-        log.error("❌ - Le fichier de configuration %s n'est pas valide",
-                  chemin_fichier, exc_info=exc)
-        raise ValueError(
-            "Le fichier de configuration n'est pas valide") from exc
+
+    except (ValueError, configparser.MissingSectionHeaderError, configparser.NoOptionError) as exc:
+        log.error("❌ - Le fichier de configuration %s n'est pas valide. "
+                  "Erreur: %s", chemin_fichier, exc)
+        raise ValueError(f"Le fichier de configuration '{chemin_fichier}' "
+                         "n'est pas valide") from exc
 
 
 def get_dataDir(app_name: str) -> pathlib.Path:
@@ -533,11 +539,42 @@ def get_dataDir(app_name: str) -> pathlib.Path:
     myDataDir = dataDir / app_name
 
     try:
-        myDataDir.mkdir(parents=True)
+        myDataDir.mkdir(parents=True, exist_ok=True)
         log.debug("Le dossier data local n'existait pas et a été créé")
-    except FileExistsError:
-        log.debug("Le dossier data local existe bien")
+    except Exception as exc:
+        log.debug("Erreur lors de la création du dossier: %s", exc)
+        raise
     return myDataDir
+
+
+def create_default_conf(path: pathlib.Path):
+    """ Créé un fichier de configuration au chemin donnée
+
+    Args:
+        path (pathlib.Path): Chemin du fichier de configuration
+    """
+    # Contenu par défaut pour la configuration de la station
+    default_conf = (
+        "[STATION]\n\n"
+        "# Nom de la station en minuscules\n"
+        "NOM_STATION     = NA\n\n"
+        "# Chemin où enregistrer les mesures\n"
+        "# - $YY sera remplacé par les deux derniers chiffres de l'année de la mesure\n"
+        "# - $STATION par le nom de la station en minuscules\n"
+        "PATH_RE         = /home/$STATION/$STATION$YY/mes-abs/mes-jour\n\n"
+        "# Azimuth de la cible\n"
+        "AZIMUTH_REPERE  = 52.35840\n\n"
+        "[AUTOCOMPLETE]\n"
+        "AUTO_INC_ANGLE      = 123.----\n"
+        "AUTO_DEC_ANGLE      = 233.----\n"
+        "AUTO_CAL_ANGLE_HAUT = 247.75--\n"
+        "AUTO_CAL_ANGLE_BAS  = 47.75--\n"
+        "SEC_ENTRE_MESURES   = 45\n"
+        "SEC_ENTRE_ETAPES    = 70\n\n\n"
+        "# N'oubliez pas de relancer l'application !\n"
+    )
+    with open(path, "w", encoding='utf-8') as file:
+        file.write(default_conf)
 
 
 def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
@@ -562,16 +599,14 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
                 "Le fichier de configuration %s n'existe pas -> création",
                 conf_path)
             # Création du fichier conf
-            with open(conf_path, "w", encoding='utf-8') as conf_file:
-                conf_file.write(DEFAULT_CONF)
+            create_default_conf(conf_path)
         try:
             return analyse_conf(conf_path)
         except (KeyError, ValueError):
             log.critical("Il semble que votre configuration par "
                          "défaut soit incompatible ou corrompue.")
             log.warning("Création d'une nouvelle config")
-            with open(conf_path, "w", encoding='utf-8') as conf_file:
-                conf_file.write(DEFAULT_CONF)
+            create_default_conf(conf_path)
             return analyse_conf(conf_path)
 
     # Verifier que le fichier fonctionne
@@ -588,21 +623,21 @@ def get_conf(app_name: str, conf_path: pathlib.Path = None) -> pathlib.Path:
 
 
 def main() -> None:
-    """ Main
-    """
+    """Fonction principale du programme."""
 
-    # Find the name of the module that was used to start the app
+    # Trouver le nom du module qui a été utilisé pour démarrer l'application
     app_module = sys.modules["__main__"].__package__
-    # Retrieve the app's metadata
+
+    # Récupérer les métadonnées de l'application
     metadata = importlib.metadata.metadata(app_module)
 
-    # Parsing des arguments cli
+    # Parser les arguments CLI
     parser = argparse.ArgumentParser()
     # Date
     parser.add_argument(
         "--date",
         type=lambda s: datetime.strptime(s, '%Y-%m-%d'),
-        help="Execute le script pour une date donnée (format YYYY-mm-dd)"
+        help="Exécute le script pour une date donnée (format YYYY-mm-dd)"
     )
     # Configuration
     parser.add_argument("--conf", type=pathlib.Path,
@@ -610,48 +645,45 @@ def main() -> None:
     # Verbosité
     parser.add_argument('-v', "--verbosity",
                         type=int, default=1, required=False,
-                        help="Verbosité [0:CRITICAL,1:INFO,2:DEBUG] "
-                        "(defaut:1)")
-    # Debug
+                        help="Niveau de verbosité [0:CRITICAL,1:INFO,2:DEBUG] "
+                        "(par défaut: 1)")
+    # Mode debug
     parser.add_argument('--debug',
                         action='store_true',
-                        help="Mode DEBUG (dev seulement !)")
-    # Debug
+                        help="Mode DEBUG (développement uniquement !)")
+    # Éditeur
     parser.add_argument('--editor',
                         type=str,
-                        help="Permet de choisir son editor gui "
-                        "(gedit, gvim, etc...)")
+                        help="Permet de choisir un éditeur GUI "
+                        "(gedit, gvim, etc.)")
 
     args = parser.parse_args()
 
-    # Debug
+    # Mode debug
     if args.debug:
         global DEBUG
         DEBUG = True
-        args.verbosite = 1000
+        args.verbosity = 1000  # Réglage de la verbosité pour le mode debug
 
     # Réglage de la verbosité
     if args.verbosity <= 0:
         log.setLevel(logging.CRITICAL)
-    elif args.verbosity <= 1:
+    elif args.verbosity == 1:
         log.setLevel(logging.INFO)
     elif args.verbosity > 1:
         log.setLevel(logging.DEBUG)
 
-    log.info("🧑 - Programme par \033[35m%s\033[0m",
-             metadata["author"])
-    log.info("📬 - Merci de reporter tous bugs à l'adresse mail suivante:"
+    log.info("🧑 - Programme par \033[35m%s\033[0m", metadata["author"])
+    log.info("📬 - Merci de reporter tous bugs à l'adresse mail suivante: "
              "\033[31mmailto:%s\033[0m", metadata["Author-email"])
-    log.info("🌍 - Ou sur le repo suivant: \033[31m%s\033[0m",
-             metadata["Home-page"])
-    log.info("👁️  - Niveau de verbosité: %s",
-             logging.getLevelName(log.level))
+    log.info("🌍 - Ou sur le repo suivant: \033[31m%s\033[0m", metadata["Home-page"])
+    log.info("👁️  - Niveau de verbosité: %s", logging.getLevelName(log.level))
 
     log.debug("Arguments: %s", args)
     log.debug("Mode: DEBUG=%s", DEBUG)
-    log.debug("Metadate: %s", metadata)
+    log.debug("Métadonnées: %s", metadata)
 
-    # Recupération du fichier de configuration
+    # Récupération du fichier de configuration
     if args.conf:
         conf = get_conf(metadata["Formal-Name"], args.conf)
     else:
@@ -659,21 +691,21 @@ def main() -> None:
 
     log.info("🎛️  - Configuration: %s", conf['Chemin_conf'])
 
-    # Verifie si l'argument date est entré
+    # Vérifier si l'argument 'date' est fourni
     if not args.date:
-        dateMes = datetime.today().strftime("%d/%m-/%y")
+        dateMes = datetime.today().strftime("%d/%m/%y")
         log.info("📆 - Date actuelle choisie")
     else:
-        dateMes = args.date.strftime("%d/%m-/%y")
-        log.info("📆 - %s choisie", dateMes)
+        dateMes = args.date.strftime("%d/%m/%y")
+        log.info("📆 - Date choisie : %s", dateMes)
 
-    pathEditor: str = None
+    pathEditor: Optional[str] = None
     if args.editor:
         pathEditor = which(args.editor)
         if not pathEditor:
-            log.warning("❌ - L'editeur %s n'existe pas !", args.editor)
+            log.warning("❌ - L'éditeur %s n'existe pas !", args.editor)
             sys.exit(1)
-        log.info("🖋️  - Editeur %s selectionné", pathEditor)
+        log.info("🖋️  - Éditeur %s sélectionné", pathEditor)
 
     QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
 

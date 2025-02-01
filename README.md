@@ -49,11 +49,11 @@ Afin de garantir la compatibilité avec votre système, vous devrez compiler le 
     L'application sera disponible dans `./build/saisiemesabs/<distribution>/<version>/saisiemesabs-x.y.z/usr/bin/saisiemesabs`
 
 > Si vous souhaitez une version `.deb` plus simple à installer :
-
+>
 > ```bash
 > briefcase package
 > ```
-
+>
 > Le package sera disponible dans `./dist`
 
 ## Configuration
