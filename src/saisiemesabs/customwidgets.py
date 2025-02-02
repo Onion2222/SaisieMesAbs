@@ -456,6 +456,8 @@ class Mesure(QtWidgets.QGroupBox):
             calculedHour = date_add_seconds(initHour, self.autoValueSec)
             # Affichage de l'heure de la prochaine mesure
             self.ligne[indexLigne + 1]["heure"].setText(calculedHour)
+            # Raz des couleurs
+            self.ligne[indexLigne+1]["heure"].setStyleSheet("")
 
     def updateAngle(self, angle: str, includeFirst: bool) -> None:
         """ Autocomplete des angles
@@ -474,8 +476,10 @@ class Mesure(QtWidgets.QGroupBox):
         else:
             self.ligne[1]["angle"].setText("%.4f" % ((angle + 200) % 400))
             self.ligne[2]["angle"].setText("%.4f" % ((400 - angle) % 400))
-            self.ligne[3]["angle"].setText(
-                "%.4f" % ((400 - angle - 200) % 400))
+            self.ligne[3]["angle"].setText("%.4f" % ((400 - angle - 200) % 400))
+        # Raz des couleurs
+        for ligne in self.ligne:
+            ligne["angle"].setStyleSheet("")
 
     def updateEst(self, angle: str) -> None:
         """ Autocomplet la saisie de l'est magnetique
