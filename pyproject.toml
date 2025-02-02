@@ -2,7 +2,7 @@
 [tool.briefcase]
 project_name = "SaisieMesAbs"
 bundle = "com.onion"
-version = "0.0.1"
+version = "0.1.0"
 url = "https://github.com/Onion2222/SaisieMesAbs"
 license.file = "LICENSE"
 author = "Arthur Perrin - KER72"
