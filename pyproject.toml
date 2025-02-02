@@ -11,7 +11,7 @@ author_email = "arthur.perrin01@protonmail.com"
 [tool.briefcase.app.saisiemesabs]
 formal_name = "SaisieMesAbs"
 description = "Appication de saisie de la mesure absolue du champs magnétique pour les îles subantarctiques"
-long_description = """More details about the app should go here.
+long_description = """ Appication de saisie de la mesure absolue du champs magnétique par la méthode des residus pour les îles subantarctiques
 """
 sources = [
     "src/saisiemesabs",
@@ -27,7 +27,8 @@ requires = [
 test_requires = [
     "pytest",
 ]
-icon = "icons/icon"
+icon.round = "icons/icon"
+icon.square = "icons.icon"
 
 [tool.briefcase.app.saisiemesabs.macOS]
 universal_build = true
@@ -107,8 +108,7 @@ flatpak_runtime_version = "6.7"
 flatpak_sdk = "org.kde.Sdk"
 
 [tool.briefcase.app.saisiemesabs.windows]
-requires = [
-]
+supported = false
 
 # Mobile deployments
 [tool.briefcase.app.saisiemesabs.iOS]
