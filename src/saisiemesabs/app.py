@@ -245,15 +245,16 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.actionHelp.triggered.connect(self.openHelp)
         # - Aide - Envoie mail
         self.actionSos = QAction(self)
-        self.actionSos.setText("Mail aux devs")
+        self.actionSos.setText("Rapporter un bug")
         self.actionSos.triggered.connect(self.sendSOS)
         # - Aide - Information
-        self.actionSos = QAction(self)
-        self.actionSos.setText("Informations")
-        self.actionSos.triggered.connect(self.openInformation)
+        self.actionInfos = QAction(self)
+        self.actionInfos.setText("Informations")
+        self.actionInfos.triggered.connect(self.openInformation)
         # - Aide | Lien
         aide.addAction(self.actionHelp)
         aide.addAction(self.actionSos)
+        aide.addAction(self.actionInfos)
         self.setMenuBar(self.menuBar)
         # Focus la premiere ligne à editer, pour etre plus rapide
         self.vise1.angleVH.setFocus()
