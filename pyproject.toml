@@ -27,7 +27,7 @@ requires = [
 test_requires = [
     "pytest",
 ]
-icon = "icons/icon"
+icon.round = "icons/icon"
 
 [tool.briefcase.app.saisiemesabs.macOS]
 universal_build = true
