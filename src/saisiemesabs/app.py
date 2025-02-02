@@ -159,6 +159,7 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         # GROUPE CONTEXTUEL
         # Date, Station et Azimuth repère
         self.contexte = QtWidgets.QGroupBox("Contexte")
+        self.contexte.setFixedWidth(500)
         # Date
         self.indDate = QtWidgets.QLabel("Date")
         self.date = SaisieDate()
