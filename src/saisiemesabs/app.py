@@ -73,15 +73,15 @@ class SaisieMesAbs(QtWidgets.QMainWindow):
         self.editeur = pathEditor
         # Initialisation de l'interface
         log.debug("Debut initialisation UI")
-        self.initUi()
+        self.initUi(metadata['version'])
         log.debug("Fin initialisation UI")
         self.show()
 
-    def initUi(self) -> None:
+    def initUi(self, version: str) -> None:
         """initialisation de la fenêtre principale
         """
         # Titre & Icone
-        self.setWindowTitle("Enregistrement des mesures magnétiques")
+        self.setWindowTitle(f"Enregistrement des mesures magnétiques (v{version})")
         self.setWindowIcon(QIcon(':/icon.png'))
         # Définition des 4 mesure (déclinaison 1&2, inclinaison 1&2)
         # Array comprennant les 4 widgets de mesure
