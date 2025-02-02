@@ -1,3 +1,5 @@
+![Logo](./icons/icon-128.png?raw=true "Logo de l'application")
+
 # SaisieMesAbs
 
 Outil de saisie des mesures du champ magnétique terrestre par la méthode des résidus.
@@ -43,18 +45,18 @@ Afin de garantir la compatibilité avec votre système, vous devrez compiler le 
 4. **Construire l'application** :
 
     ```bash
-    briefcase build
+    briefcase build --update
     ```
 
     L'application sera disponible dans `./build/saisiemesabs/<distribution>/<version>/saisiemesabs-x.y.z/usr/bin/saisiemesabs`
 
-> Si vous souhaitez une version `.deb` plus simple à installer :
->
-> ```bash
-> briefcase package
-> ```
->
-> Le package sera disponible dans `./dist`
+5. **Distribuer l'application** :
+
+    Si vous souhaitez une version `.deb` plus simple à installer :
+    ```bash
+    briefcase package
+    ```
+    Le package sera disponible dans `./dist` et sera uniquement compatible avec la version de votre OS
 
 ## Configuration
 
