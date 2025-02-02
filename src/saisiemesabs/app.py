@@ -676,33 +676,38 @@ class PopUpCredit(QtWidgets.QDialog):
     def __init__(self):
         QtWidgets.QDialog.__init__(self)
         self.setWindowTitle("Informations")
-        self.message = QtWidgets.QLabel(
+        self.message = []
+        self.message.append(QtWidgets.QLabel(
             "Créé par Arthur Perrin\n"
             "Lors de la mission KER72\n\n"
             "Merci de reporter tous bugs à l'adresse mail suivante:"
-        )
-        self.message2 = QtWidgets.QLabel(
+        ))
+        self.message.append(QtWidgets.QLabel(
             "<a href='mailto:arthur.perrin01@protonmail.com'>arthur.perrin01@protonmail.com</a>"
-        )
-        self.message3 = QtWidgets.QLabel("N'hesitez pas à contribuer au developpement sur:")
-        self.message4 = QtWidgets.QLabel(
+        ))
+        self.message.append(QtWidgets.QLabel(
+            "N'hesitez pas à contribuer au developpement sur:"
+        ))
+        self.message.append(QtWidgets.QLabel(
             "<a href='https://github.com/Onion2222/SaisieMesAbs'>GitHub</a>"
-        )
+        ))
+        self.message.append(QtWidgets.QLabel(
+            "Merci de respecter la License:"
+        ))
+        self.message.append(QtWidgets.QLabel(
+            "<a href='https://github.com/Onion2222/SaisieMesAbs/blob/main/LICENSE'>LICENSE</a>"
+        ))
 
-        self.message2.setOpenExternalLinks(True)
-        self.message4.setOpenExternalLinks(True)
-        self.message.setAlignment(QtCore.Qt.AlignCenter)
-        self.message2.setAlignment(QtCore.Qt.AlignCenter)
-        self.message3.setAlignment(QtCore.Qt.AlignCenter)
-        self.message4.setAlignment(QtCore.Qt.AlignCenter)
-        self.message.setMinimumWidth(400)
+        self.message[1].setOpenExternalLinks(True)
+        self.message[3].setOpenExternalLinks(True)
+        self.message[5].setOpenExternalLinks(True)
+        layout = QtWidgets.QVBoxLayout(self)
+        for mes in self.message:
+            mes.setAlignment(QtCore.Qt.AlignCenter)
+            mes.setMinimumWidth(400)
+            layout.addWidget(mes)
         self.button = QtWidgets.QPushButton("OK")
         self.button.setFixedWidth(80)
-        layout = QtWidgets.QVBoxLayout(self)
-        layout.addWidget(self.message)
-        layout.addWidget(self.message2)
-        layout.addWidget(self.message3)
-        layout.addWidget(self.message4)
         layout.addWidget(self.button, alignment=QtCore.Qt.AlignRight)
         self.button.clicked.connect(lambda: QtWidgets.QDialog.close(self))
         self.button.setFocus()
@@ -803,6 +808,6 @@ def main() -> None:
             log.warning("L'éditeur %s n'existe pas !", args.editor)
             sys.exit(1)
         log.info("🖋️  - Éditeur %s sélectionné", pathEditor)
-
+    
     main_window = SaisieMesAbs(dateMes, metadata, conf, pathEditor)
     sys.exit(app.exec())
