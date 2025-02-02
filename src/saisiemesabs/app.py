@@ -675,6 +675,7 @@ class PopUpLogger(logging.Handler, QtWidgets.QDialog):
 class PopUpCredit(QtWidgets.QDialog):
     def __init__(self):
         QtWidgets.QDialog.__init__(self)
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         self.setWindowTitle("Informations")
         self.message = []
         self.message.append(QtWidgets.QLabel(
@@ -808,6 +809,6 @@ def main() -> None:
             log.warning("L'éditeur %s n'existe pas !", args.editor)
             sys.exit(1)
         log.info("🖋️  - Éditeur %s sélectionné", pathEditor)
-    
+
     main_window = SaisieMesAbs(dateMes, metadata, conf, pathEditor)
     sys.exit(app.exec())
