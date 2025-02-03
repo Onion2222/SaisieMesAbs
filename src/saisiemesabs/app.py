@@ -660,6 +660,7 @@ class PopUpLogger(logging.Handler, QtWidgets.QDialog):
         layout.addWidget(self.header)
         layout.addWidget(self.message)
         layout.addWidget(self.button, alignment=QtCore.Qt.AlignRight)
+        layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         self.button.clicked.connect(lambda: QtWidgets.QDialog.close(self))
 
     def emit(self, record: logging.LogRecord):
@@ -705,12 +706,13 @@ class PopUpCredit(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout(self)
         for mes in self.message:
             mes.setAlignment(QtCore.Qt.AlignCenter)
-            mes.setMinimumWidth(400)
+            mes.setMaximumWidth(400)
             layout.addWidget(mes)
         self.button = QtWidgets.QPushButton("OK")
         self.button.setFixedWidth(80)
         layout.addWidget(self.button, alignment=QtCore.Qt.AlignRight)
-        self.button.clicked.connect(lambda: QtWidgets.QDialog.close(self))
+        layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        self.button.clicked.connect(lambda: self.close())
         self.button.setFocus()
         self.exec()
         self.activateWindow()
